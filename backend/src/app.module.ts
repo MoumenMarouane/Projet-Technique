@@ -17,9 +17,21 @@ import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
-    PrismaModule, AuthModule, UsersModule, VendeursModule, ClientsModule,
-    AdressesModule, ContactsModule, EntreprisesModule, CategoriesModule,
-    ProduitsModule, DevisModule, CommandesModule, FacturesModule, TicketsModule, DashboardModule,
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    VendeursModule,
+    ClientsModule,
+    AdressesModule,
+    ContactsModule,
+    EntreprisesModule,
+    CategoriesModule,
+    ProduitsModule,
+    DevisModule,
+    CommandesModule,
+    FacturesModule,
+    TicketsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
