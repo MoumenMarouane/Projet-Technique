@@ -1,0 +1,342 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+
+// ============================================================
+// PRISMA SCHEMA – Plateforme Gestion Commerciale
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+} 
+
+
+// ============================================================
+// AUTH
+// ============================================================
+
+enum Role {
+  VENDEUR
+  CLIENT
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  vendeur      Vendeur?
+  client       Client?
+
+  @@map("users")
+}
+
+// ============================================================
+// VENDEUR
+// ============================================================
+
+model Vendeur {
+  id           String  @id @default(uuid())
+  userId       String  @unique @map("id_user")
+  boutiqueNom  String  @map("boutique_nom")
+  boutiqueDesc String? @map("boutique_desc")
+
+  user         User          @relation(fields: [userId], references: [id])
+  produits     Produit[]
+  devis        Devis[]
+  commandes    Commande[]
+  adresses     Adresse[]
+  contacts     Contact[]
+  entreprise   Entreprise?
+
+  @@map("vendeurs")
+}
+
+// ============================================================
+// CLIENT
+// ============================================================
+
+enum TypeClient {
+  LEGAL
+  ANONYME
+}
+
+model Client {
+  id               String     @id @default(uuid())
+  userId           String?    @unique @map("id_user")
+  type             TypeClient
+  dateInscription  DateTime?  @default(now()) @map("date_inscription")
+  statut           String?
+
+  user             User?       @relation(fields: [userId], references: [id])
+  devis            Devis[]
+  commandes        Commande[]
+  adresses         Adresse[]
+  contacts         Contact[]
+  entreprise       Entreprise?
+
+  @@map("clients")
+}
+
+// ============================================================
+// PARTAGÉ : ADRESSE, CONTACT, ENTREPRISE
+// ============================================================
+
+model Adresse {
+  id          String  @id @default(uuid())
+  rue         String
+  ville       String
+  codePostal  String  @map("code_postal")
+  region      String?
+  pays        String
+
+  vendeurId   String? @map("id_vendeur")
+  clientId    String? @map("id_client")
+
+  vendeur     Vendeur? @relation(fields: [vendeurId], references: [id])
+  client      Client?  @relation(fields: [clientId], references: [id])
+
+  @@map("adresses")
+}
+
+model Contact {
+  id           String  @id @default(uuid())
+  nom          String
+  prenom       String
+  telephone    String?
+  emailContact String? @map("email_contact")
+  cin          String? @map("cin_passeport")
+
+  vendeurId    String? @map("id_vendeur")
+  clientId     String? @map("id_client")
+
+  vendeur      Vendeur? @relation(fields: [vendeurId], references: [id])
+  client       Client?  @relation(fields: [clientId], references: [id])
+
+  @@map("contacts")
+}
+
+model Entreprise {
+  id            String  @id @default(uuid())
+  raisonSociale String  @map("raison_sociale")
+  ice           String? @unique
+  if_fiscal     String? @map("if_fiscal")
+  rc            String? @map("rc")
+  cnss          String? @map("cnss")
+  patente       String?
+
+  vendeurId     String? @unique @map("id_vendeur")
+  clientId      String? @unique @map("id_client")
+
+  vendeur       Vendeur? @relation(fields: [vendeurId], references: [id])
+  client        Client?  @relation(fields: [clientId], references: [id])
+
+  @@map("entreprises")
+}
+
+// ============================================================
+// CATALOGUE
+// ============================================================
+
+model Categorie {
+  id          String  @id @default(uuid())
+  libelle     String
+  description String?
+
+  caracTypes  CaracType[]
+  produits    Produit[]
+
+  @@map("categories")
+}
+
+model CaracType {
+  id          String @id @default(uuid())
+  categorieId String @map("id_categorie")
+  nom         String
+
+  categorie   Categorie    @relation(fields: [categorieId], references: [id])
+  valeurs     CaracValeur[]
+
+  @@map("carac_types")
+}
+
+model Produit {
+  id           String  @id @default(uuid())
+  vendeurId    String  @map("id_vendeur")
+  categorieId  String  @map("id_categorie")
+  nom          String
+  description  String?
+  prixUnitaire Decimal @map("prix_unitaire") @db.Decimal(10, 2)
+  stock        Int     @default(0)
+
+  vendeur      Vendeur       @relation(fields: [vendeurId], references: [id])
+  categorie    Categorie     @relation(fields: [categorieId], references: [id])
+  caracValeurs CaracValeur[]
+  lignesDevis  LigneDevis[]
+  lignesCmd    LigneCommande[]
+
+  @@map("produits")
+}
+
+model CaracValeur {
+  produitId   String @map("id_produit")
+  caracTypeId String @map("id_carac_type")
+  valeur      String
+
+  produit     Produit   @relation(fields: [produitId], references: [id])
+  caracType   CaracType @relation(fields: [caracTypeId], references: [id])
+
+  @@id([produitId, caracTypeId])
+  @@map("carac_valeurs")
+}
+
+// ============================================================
+// DEVIS
+// ============================================================
+
+enum StatutDevis {
+  BROUILLON
+  ENVOYE
+  ACCEPTE
+  REFUSE
+  EXPIRE
+}
+
+model Devis {
+  id        String      @id @default(uuid())
+  clientId  String      @map("id_client")
+  vendeurId String      @map("id_vendeur")
+  dateDevis DateTime    @default(now()) @map("date_devis")
+  statut    StatutDevis @default(BROUILLON)
+
+  client    Client       @relation(fields: [clientId], references: [id])
+  vendeur   Vendeur      @relation(fields: [vendeurId], references: [id])
+  lignes    LigneDevis[]
+
+  @@map("devis")
+}
+
+model LigneDevis {
+  devisId          String  @map("id_devis")
+  produitId        String  @map("id_produit")
+  quantite         Int
+  prixUnitaireSnap Decimal @map("prix_unitaire_snapshot") @db.Decimal(10, 2)
+
+  devis   Devis   @relation(fields: [devisId], references: [id])
+  produit Produit @relation(fields: [produitId], references: [id])
+
+  @@id([devisId, produitId])
+  @@map("lignes_devis")
+}
+
+// ============================================================
+// COMMANDE
+// ============================================================
+
+enum TypeCommande {
+  NORMAL
+  ANONYME
+}
+
+enum StatutCommande {
+  EN_ATTENTE
+  CONFIRMEE
+  EN_COURS
+  LIVREE
+  ANNULEE
+}
+
+model Commande {
+  id             String         @id @default(uuid())
+  clientId       String         @map("id_client")
+  vendeurId      String         @map("id_vendeur")
+  type           TypeCommande
+  dateCommande   DateTime       @default(now()) @map("date_commande")
+  statut         StatutCommande @default(EN_ATTENTE)
+
+  client         Client          @relation(fields: [clientId], references: [id])
+  vendeur        Vendeur         @relation(fields: [vendeurId], references: [id])
+  lignes         LigneCommande[]
+  facture        Facture?
+  ticket         Ticket?
+
+  @@map("commandes")
+}
+
+model LigneCommande {
+  commandeId       String  @map("id_commande")
+  produitId        String  @map("id_produit")
+  quantite         Int
+  prixUnitaireSnap Decimal @map("prix_unitaire_snapshot") @db.Decimal(10, 2)
+
+  commande Commande @relation(fields: [commandeId], references: [id])
+  produit  Produit  @relation(fields: [produitId], references: [id])
+
+  @@id([commandeId, produitId])
+  @@map("lignes_commande")
+}
+
+// ============================================================
+// FINANCE
+// ============================================================
+
+enum StatutPaiement {
+  NON_PAYE
+  PARTIEL
+  SOLDE
+}
+
+model Facture {
+  id             String         @id @default(uuid())
+  commandeId     String         @unique @map("id_commande")
+  dateEmission   DateTime       @default(now()) @map("date_emission")
+  montantHt      Decimal        @map("montant_ht") @db.Decimal(10, 2)
+  tva            Decimal        @db.Decimal(5, 2)
+  montantTtc     Decimal        @map("montant_ttc") @db.Decimal(10, 2)
+  statutPaiement StatutPaiement @default(NON_PAYE) @map("statut_paiement")
+
+  commande       Commande   @relation(fields: [commandeId], references: [id])
+  paiements      Paiement[]
+
+  @@map("factures")
+}
+
+model Ticket {
+  id           String   @id @default(uuid())
+  commandeId   String   @unique @map("id_commande")
+  dateEmission DateTime @default(now()) @map("date_emission")
+  montantTotal Decimal  @map("montant_total") @db.Decimal(10, 2)
+
+  commande     Commande @relation(fields: [commandeId], references: [id])
+
+  @@map("tickets")
+}
+
+enum MethodePaiement {
+  ESPECES
+  CHEQUE
+  ONLINE
+  VIREMENT
+}
+
+model Paiement {
+  id             String          @id @default(uuid())
+  factureId      String          @map("id_facture")
+  methode        MethodePaiement
+  montantVerse   Decimal         @map("montant_verse") @db.Decimal(10, 2)
+  datePaiement   DateTime        @default(now()) @map("date_paiement")
+  reference      String?
+
+  facture        Facture @relation(fields: [factureId], references: [id])
+
+  @@map("paiements")
+}
