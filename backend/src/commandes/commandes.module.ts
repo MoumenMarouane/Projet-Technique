@@ -1,9 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CommandesController } from './commandes.controller';
 import { CommandesService } from './commandes.service';
-
-@Module({
-  controllers: [CommandesController],
-  providers: [CommandesService]
-})
+import { CommandesController } from './commandes.controller';
+@Module({ controllers: [CommandesController], providers: [CommandesService], exports: [CommandesService] })
 export class CommandesModule {}

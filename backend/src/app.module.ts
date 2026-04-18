@@ -1,7 +1,7 @@
-  import { Module } from '@nestjs/common';
-  import { PrismaModule } from './prisma/prisma.module';
-  import { AuthModule } from './auth/auth.module';
-  import { UsersModule } from './users/users.module';
+import { Module } from '@nestjs/common';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { VendeursModule } from './vendeurs/vendeurs.module';
 import { ClientsModule } from './clients/clients.module';
 import { AdressesModule } from './adresses/adresses.module';
@@ -15,7 +15,11 @@ import { FacturesModule } from './factures/factures.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 
-  @Module({
-    imports: [PrismaModule, AuthModule, UsersModule, VendeursModule, ClientsModule, AdressesModule, ContactsModule, EntreprisesModule, CategoriesModule, ProduitsModule, DevisModule, CommandesModule, FacturesModule, TicketsModule, DashboardModule],
-  })
-  export class AppModule {}
+@Module({
+  imports: [
+    PrismaModule, AuthModule, UsersModule, VendeursModule, ClientsModule,
+    AdressesModule, ContactsModule, EntreprisesModule, CategoriesModule,
+    ProduitsModule, DevisModule, CommandesModule, FacturesModule, TicketsModule, DashboardModule,
+  ],
+})
+export class AppModule {}

@@ -1,9 +1,5 @@
 import { Module } from '@nestjs/common';
-import { VendeursController } from './vendeurs.controller';
 import { VendeursService } from './vendeurs.service';
-
-@Module({
-  controllers: [VendeursController],
-  providers: [VendeursService]
-})
+import { VendeursController } from './vendeurs.controller';
+@Module({ controllers: [VendeursController], providers: [VendeursService], exports: [VendeursService] })
 export class VendeursModule {}
