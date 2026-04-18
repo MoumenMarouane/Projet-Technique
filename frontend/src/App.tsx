@@ -4,6 +4,8 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/dashboard/Dashboard';
+import Produits from './pages/produits/Produits';
+import Commandes from './pages/commandes/Commandes';
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="produits" element={<Produits />} />
+          <Route path="commandes" element={<Commandes />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
