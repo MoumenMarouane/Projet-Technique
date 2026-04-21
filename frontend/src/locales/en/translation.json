@@ -1,0 +1,19 @@
+{
+  "dashboard": "Dashboard",
+  "produits": "Products",
+  "commandes": "Orders",
+  "devis": "Quotes",
+  "factures": "Invoices",
+  "clients": "Clients",
+  "categories": "Categories",
+  "login": "Login",
+  "logout": "Logout",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "search": "Search",
+  "loading": "Loading...",
+  "error": "An error occurred"
+}

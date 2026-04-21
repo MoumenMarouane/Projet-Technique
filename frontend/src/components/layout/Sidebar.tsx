@@ -10,9 +10,15 @@ const navItems = [
   { label: 'Catégories', path: '/categories', section: 'Catalogue' },
   { label: 'Factures', path: '/factures', section: 'Finance' },
   { label: 'Paiements', path: '/paiements', section: 'Finance' },
+  { label: 'Adresses', path: '/adresses', section: 'Données' },
+  { label: 'Contacts', path: '/contacts', section: 'Données' },
+  { label: 'Entreprises', path: '/entreprises', section: 'Données' },
+  { label: 'Tickets', path: '/tickets', section: 'Support' },
+  { label: 'Utilisateurs', path: '/users', section: 'Admin' },
+  { label: 'Vendeurs', path: '/vendeurs', section: 'Admin' },
 ];
 
-const sections = ['Principal', 'Catalogue', 'Finance'];
+const sections = ['Principal', 'Catalogue', 'Finance', 'Données', 'Support', 'Admin'];
 
 export default function Sidebar() {
   const navigate = useNavigate();
