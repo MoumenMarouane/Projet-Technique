@@ -3,13 +3,11 @@ import TopBar from '../../components/layout/TopBar';
 import { commandesService } from '../../services/commandes.service';
 import CommandeDetail from './CommandeDetail';
 
-const STATUTS = ['Tous', 'EN_ATTENTE', 'CONFIRMEE', 'EN_COURS', 'LIVREE', 'ANNULEE'];
+const STATUTS = ['Tous', 'EN_COURS', 'LIVREE', 'ANNULEE'];
 
 const statutColors: Record<string, string> = {
-  LIVREE: 'bg-green-950 text-green-400',
-  EN_ATTENTE: 'bg-orange-950 text-orange-400',
-  CONFIRMEE: 'bg-indigo-950 text-indigo-400',
   EN_COURS: 'bg-blue-950 text-blue-400',
+  LIVREE: 'bg-green-950 text-green-400',
   ANNULEE: 'bg-red-950 text-red-400',
 };
 
@@ -36,7 +34,6 @@ export default function Commandes() {
       <TopBar title="Commandes" />
       <div className="flex-1 overflow-y-auto p-6">
 
-        {/* Filtres statut */}
         <div className="flex gap-2 mb-6">
           {STATUTS.map(s => (
             <button
@@ -53,7 +50,6 @@ export default function Commandes() {
           ))}
         </div>
 
-        {/* Table */}
         <div className="bg-[#161b27] border border-[#2d3348] rounded-xl overflow-hidden">
           <table className="w-full text-[12px]">
             <thead>
@@ -68,13 +64,15 @@ export default function Commandes() {
                 <tr key={c.id} className="border-b border-[#1a2035] last:border-0 hover:bg-[#1a2035] transition-colors">
                   <td className="px-4 py-3 text-slate-400">#{c.id?.slice(0, 6)}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${c.type === 'ANONYME' ? 'bg-gray-900 text-gray-400' : 'bg-indigo-950 text-indigo-400'}`}>
-                      {c.type}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      c.typeCommande === 'TICKET' ? 'bg-gray-900 text-gray-400' : 'bg-indigo-950 text-indigo-400'
+                    }`}>
+                      {c.typeCommande}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{c.lignes?.length} article(s)</td>
+                  <td className="px-4 py-3 text-slate-300">{c.lignes?.length ?? 0} article(s)</td>
                   <td className="px-4 py-3 text-slate-400">
-                    {new Date(c.dateCommande).toLocaleDateString('fr-FR')}
+                    {new Date(c.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColors[c.statut]}`}>
@@ -89,18 +87,10 @@ export default function Commandes() {
                       >
                         Détail
                       </button>
-                      {c.statut === 'EN_ATTENTE' && (
-                        <button
-                          onClick={() => handleStatut(c.id, 'CONFIRMEE')}
-                          className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors"
-                        >
-                          Confirmer
-                        </button>
-                      )}
-                      {c.statut === 'CONFIRMEE' && (
+                      {c.statut === 'EN_COURS' && (
                         <button
                           onClick={() => handleStatut(c.id, 'LIVREE')}
-                          className="text-blue-400 text-[11px] px-2 py-1 rounded border border-blue-900 hover:border-blue-700 transition-colors"
+                          className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors"
                         >
                           Livrer
                         </button>

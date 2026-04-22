@@ -35,7 +35,6 @@ export default function Produits() {
       <TopBar title="Produits" />
       <div className="flex-1 overflow-y-auto p-6">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <input
             value={search}
@@ -51,12 +50,11 @@ export default function Produits() {
           </button>
         </div>
 
-        {/* Table */}
         <div className="bg-[#161b27] border border-[#2d3348] rounded-xl overflow-hidden">
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-[#2d3348]">
-                {['Nom', 'Catégorie', 'Prix unitaire', 'Stock', 'Caractéristiques', 'Actions'].map(h => (
+                {['Nom', 'Catégorie', 'Prix', 'Stock', 'Caractéristiques', 'Actions'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[11px] text-slate-500 font-normal">{h}</th>
                 ))}
               </tr>
@@ -67,10 +65,10 @@ export default function Produits() {
                   <td className="px-4 py-3 text-slate-200 font-medium">{p.nom}</td>
                   <td className="px-4 py-3">
                     <span className="bg-indigo-950 text-indigo-400 text-[10px] px-2 py-0.5 rounded-full">
-                      {p.categorie?.libelle}
+                      {p.categorie?.nom ?? '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{Number(p.prixUnitaire).toLocaleString()} MAD</td>
+                  <td className="px-4 py-3 text-slate-300">{Number(p.prix).toLocaleString()} MAD</td>
                   <td className="px-4 py-3">
                     <span className={`text-[11px] font-medium ${p.stock > 10 ? 'text-green-400' : p.stock > 0 ? 'text-orange-400' : 'text-red-400'}`}>
                       {p.stock} unités
@@ -111,7 +109,6 @@ export default function Produits() {
         </div>
       </div>
 
-      {/* Modal formulaire */}
       {showForm && (
         <ProduitForm
           produit={selected}

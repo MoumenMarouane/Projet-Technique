@@ -12,7 +12,7 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
   const [form, setForm] = useState({
     nom: '',
     description: '',
-    prixUnitaire: '',
+    prix: '',
     stock: '',
     categorieId: '',
   });
@@ -24,7 +24,7 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
       setForm({
         nom: produit.nom,
         description: produit.description ?? '',
-        prixUnitaire: produit.prixUnitaire,
+        prix: produit.prix,
         stock: produit.stock,
         categorieId: produit.categorieId,
       });
@@ -36,11 +36,7 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
     setLoading(true);
     setError('');
     try {
-      const data = {
-        ...form,
-        prixUnitaire: Number(form.prixUnitaire),
-        stock: Number(form.stock),
-      };
+      const data = { ...form, prix: Number(form.prix), stock: Number(form.stock) };
       if (produit) {
         await produitsService.update(produit.id, data);
       } else {
@@ -85,7 +81,7 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
             >
               <option value="">Sélectionner une catégorie</option>
               {categories.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.libelle}</option>
+                <option key={c.id} value={c.id}>{c.nom}</option>
               ))}
             </select>
           </div>
@@ -95,8 +91,8 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
               <label className="text-slate-400 text-xs mb-1 block">Prix (MAD)</label>
               <input
                 type="number"
-                value={form.prixUnitaire}
-                onChange={e => setForm({ ...form, prixUnitaire: e.target.value })}
+                value={form.prix}
+                onChange={e => setForm({ ...form, prix: e.target.value })}
                 className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                 required
               />
@@ -126,18 +122,10 @@ export default function ProduitForm({ produit, categories, onClose, onSuccess }:
           {error && <p className="text-red-400 text-xs">{error}</p>}
 
           <div className="flex gap-3 mt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2 text-sm border border-[#2d3348] text-slate-400 rounded-lg hover:border-slate-600 transition-colors"
-            >
+            <button type="button" onClick={onClose} className="flex-1 py-2 text-sm border border-[#2d3348] text-slate-400 rounded-lg hover:border-slate-600 transition-colors">
               Annuler
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="flex-1 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50">
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>

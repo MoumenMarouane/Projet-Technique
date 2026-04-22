@@ -8,10 +8,10 @@ interface Props {
   onSuccess: () => void;
 }
 
-const METHODES = ['ESPECES', 'CHEQUE', 'ONLINE', 'VIREMENT'];
+const METHODES = ['ESPECES', 'VIREMENT', 'CHEQUE', 'CARTE'];
 
 export default function PaiementForm({ factureId, reste, onClose, onSuccess }: Props) {
-  const [form, setForm] = useState({ methode: 'ESPECES', montantVerse: '', reference: '' });
+  const [form, setForm] = useState({ methode: 'ESPECES', montant: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,8 +21,8 @@ export default function PaiementForm({ factureId, reste, onClose, onSuccess }: P
     setError('');
     try {
       await facturesService.addPaiement(factureId, {
-        ...form,
-        montantVerse: Number(form.montantVerse),
+        methode: form.methode,
+        montant: Number(form.montant),
       });
       onSuccess();
     } catch (err: any) {
@@ -68,22 +68,12 @@ export default function PaiementForm({ factureId, reste, onClose, onSuccess }: P
             <label className="text-slate-400 text-xs mb-1 block">Montant (MAD)</label>
             <input
               type="number"
-              value={form.montantVerse}
-              onChange={e => setForm({ ...form, montantVerse: e.target.value })}
+              value={form.montant}
+              onChange={e => setForm({ ...form, montant: e.target.value })}
               max={reste}
               min={1}
               className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
               required
-            />
-          </div>
-
-          <div>
-            <label className="text-slate-400 text-xs mb-1 block">Référence (optionnel)</label>
-            <input
-              value={form.reference}
-              onChange={e => setForm({ ...form, reference: e.target.value })}
-              className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-              placeholder="N° chèque, transaction..."
             />
           </div>
 

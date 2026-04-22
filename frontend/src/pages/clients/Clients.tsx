@@ -11,14 +11,13 @@ export default function Clients() {
   }, []);
 
   const filtered = clients.filter(c =>
-    c.id.toLowerCase().includes(search.toLowerCase())
+    `${c.nom ?? ''} ${c.prenom ?? ''} ${c.email ?? ''}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="flex flex-col h-full">
       <TopBar title="Clients" />
       <div className="flex-1 overflow-y-auto p-6">
-
         <div className="flex items-center justify-between mb-6">
           <input
             value={search}
@@ -32,7 +31,7 @@ export default function Clients() {
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-[#2d3348]">
-                {['ID', 'Type', 'Statut', 'Date inscription', 'Commandes', 'Devis'].map(h => (
+                {['Nom', 'Prénom', 'Email', 'Type', 'Commandes', 'Devis'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-[11px] text-slate-500 font-normal">{h}</th>
                 ))}
               </tr>
@@ -40,19 +39,15 @@ export default function Clients() {
             <tbody>
               {filtered.map((c: any) => (
                 <tr key={c.id} className="border-b border-[#1a2035] last:border-0 hover:bg-[#1a2035] transition-colors">
-                  <td className="px-4 py-3 text-slate-400 font-mono">#{c.id?.slice(0, 8)}</td>
+                  <td className="px-4 py-3 text-slate-200 font-medium">{c.nom}</td>
+                  <td className="px-4 py-3 text-slate-400">{c.prenom ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-400">{c.email ?? '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      c.type === 'LEGAL' ? 'bg-indigo-950 text-indigo-400' : 'bg-gray-900 text-gray-400'
+                      c.typeClient === 'PROFESSIONNEL' ? 'bg-indigo-950 text-indigo-400' : 'bg-gray-900 text-gray-400'
                     }`}>
-                      {c.type === 'LEGAL' ? 'Légal' : 'Anonyme'}
+                      {c.typeClient === 'PROFESSIONNEL' ? 'Pro' : 'Particulier'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-green-400 text-[11px]">{c.statut ?? 'Actif'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {c.dateInscription ? new Date(c.dateInscription).toLocaleDateString('fr-FR') : '—'}
                   </td>
                   <td className="px-4 py-3 text-slate-300">{c.commandes?.length ?? 0}</td>
                   <td className="px-4 py-3 text-slate-300">{c.devis?.length ?? 0}</td>

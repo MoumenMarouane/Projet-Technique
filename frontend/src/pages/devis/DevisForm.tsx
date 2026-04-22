@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { devisService } from '../../services/devis.service';
 import { produitsService } from '../../services/produits.service';
+import { clientsService } from '../../services/clients.service';
 
 interface Props {
   onClose: () => void;
@@ -9,23 +10,25 @@ interface Props {
 
 export default function DevisForm({ onClose, onSuccess }: Props) {
   const [produits, setProduits] = useState<any[]>([]);
-  const [vendeurId, setVendeurId] = useState('');
-  const [lignes, setLignes] = useState([{ produitId: '', quantite: 1, prixUnitaireSnap: 0 }]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [clientId, setClientId] = useState('');
+  const [lignes, setLignes] = useState([{ produitId: '', quantite: 1, prixUnitaire: 0 }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     produitsService.getAll().then(r => setProduits(r.data));
+    clientsService.getAll().then(r => setClients(r.data));
   }, []);
 
-  const addLigne = () => setLignes([...lignes, { produitId: '', quantite: 1, prixUnitaireSnap: 0 }]);
+  const addLigne = () => setLignes([...lignes, { produitId: '', quantite: 1, prixUnitaire: 0 }]);
 
   const updateLigne = (i: number, field: string, value: any) => {
     const updated = [...lignes];
     updated[i] = { ...updated[i], [field]: value };
     if (field === 'produitId') {
       const produit = produits.find(p => p.id === value);
-      if (produit) updated[i].prixUnitaireSnap = Number(produit.prixUnitaire);
+      if (produit) updated[i].prixUnitaire = Number(produit.prix);
     }
     setLignes(updated);
   };
@@ -37,7 +40,7 @@ export default function DevisForm({ onClose, onSuccess }: Props) {
     setLoading(true);
     setError('');
     try {
-      await devisService.create({ vendeurId, lignes });
+      await devisService.create({ clientId, lignes });
       onSuccess();
     } catch {
       setError('Erreur lors de la création du devis');
@@ -46,7 +49,7 @@ export default function DevisForm({ onClose, onSuccess }: Props) {
     }
   };
 
-  const total = lignes.reduce((sum, l) => sum + l.prixUnitaireSnap * l.quantite, 0);
+  const total = lignes.reduce((sum, l) => sum + l.prixUnitaire * l.quantite, 0);
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -58,14 +61,18 @@ export default function DevisForm({ onClose, onSuccess }: Props) {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-slate-400 text-xs mb-1 block">ID Vendeur</label>
-            <input
-              value={vendeurId}
-              onChange={e => setVendeurId(e.target.value)}
+            <label className="text-slate-400 text-xs mb-1 block">Client</label>
+            <select
+              value={clientId}
+              onChange={e => setClientId(e.target.value)}
               className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-              placeholder="ID du vendeur"
               required
-            />
+            >
+              <option value="">Sélectionner un client</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.nom} {c.prenom ?? ''}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -96,7 +103,7 @@ export default function DevisForm({ onClose, onSuccess }: Props) {
                   required
                 />
                 <span className="flex items-center text-slate-400 text-[11px] min-w-[70px]">
-                  {(ligne.prixUnitaireSnap * ligne.quantite).toLocaleString()} MAD
+                  {(ligne.prixUnitaire * ligne.quantite).toLocaleString()} MAD
                 </span>
                 {lignes.length > 1 && (
                   <button type="button" onClick={() => removeLigne(i)} className="text-red-400 hover:text-red-300 text-lg">×</button>
