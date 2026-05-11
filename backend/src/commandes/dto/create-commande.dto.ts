@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsArray, ValidateNested, IsInt, IsNumber } from 'class-validator';
+import { IsString, IsEnum, IsArray, ValidateNested, IsInt, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TypeCommande } from '@prisma/client';
 export class LigneCommandeDto {
@@ -8,6 +8,7 @@ export class LigneCommandeDto {
 }
 export class CreateCommandeDto {
   @IsString() vendeurId: string;
+  @IsOptional() @IsString() clientId?: string;
   @IsEnum(TypeCommande) type: TypeCommande;
   @IsArray() @ValidateNested({ each: true }) @Type(() => LigneCommandeDto) lignes: LigneCommandeDto[];
 }

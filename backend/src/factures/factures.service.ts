@@ -26,7 +26,12 @@ export class FacturesService {
       include: { paiements: true },
     });
   }
-
+ findAll(userId: string) {
+  return this.prisma.facture.findMany({
+    where: { commande: { vendeur: { userId } } },
+    include: { commande: true, paiements: true },
+  });
+}
   async addPaiement(factureId: string, dto: CreatePaiementDto) {
     const facture = await this.prisma.facture.findUnique({
       where: { id: factureId },
