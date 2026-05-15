@@ -16,18 +16,15 @@ export class DevisService {
 
   findAll(clientId?: string, vendeurId?: string) {
     return this.prisma.devis.findMany({
-      where: {
-        ...(clientId && { clientId }),
-        ...(vendeurId && { vendeurId }),
-      },
-      include: { lignes: { include: { produit: true } } },
+      where: { ...(clientId && { clientId }), ...(vendeurId && { vendeurId }) },
+      include: { lignes: { include: { variante: { include: { items: true } } } } },
     });
   }
 
   findOne(id: string) {
     return this.prisma.devis.findUnique({
       where: { id },
-      include: { lignes: { include: { produit: true } } },
+      include: { lignes: { include: { variante: { include: { items: { include: { attributOption: true } } } } } } },
     });
   }
 
@@ -46,7 +43,7 @@ export class DevisService {
           type: 'NORMAL',
           lignes: {
             create: devis.lignes.map(l => ({
-              produitId: l.produitId,
+              varianteId: l.varianteId,       // ← remplace produitId
               quantite: l.quantite,
               prixUnitaireSnap: l.prixUnitaireSnap,
             })),

@@ -1,7 +1,7 @@
 import { IsString, IsArray, ValidateNested, IsNumber, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 export class LigneDevisDto {
-  @IsString() produitId: string;
+  @IsString() varianteId: string;
   @IsInt() quantite: number;
   @IsNumber() prixUnitaireSnap: number;
 }
