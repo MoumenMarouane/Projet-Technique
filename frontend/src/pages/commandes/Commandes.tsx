@@ -67,12 +67,12 @@ export default function Commandes() {
                     <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                       c.typeCommande === 'TICKET' ? 'bg-gray-900 text-gray-400' : 'bg-indigo-950 text-indigo-400'
                     }`}>
-                      {c.typeCommande}
+                      {c.type}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-300">{c.lignes?.length ?? 0} article(s)</td>
                   <td className="px-4 py-3 text-slate-400">
-                    {new Date(c.createdAt).toLocaleDateString('fr-FR')}
+                   {new Date(c.dateCommande).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColors[c.statut]}`}>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
 import { facturesService } from '../../services/factures.service';
 import PaiementForm from './PaiementForm';
@@ -10,11 +10,16 @@ const statutColor: Record<string, string> = {
 };
 
 export default function Factures() {
+  const [factures, setFactures] = useState<any[]>([]);
   const [factureId, setFactureId] = useState('');
   const [facture, setFacture] = useState<any>(null);
   const [showPaiement, setShowPaiement] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    facturesService.getAll().then(r => setFactures(r.data)).catch(() => {});
+  }, []);
 
   const handleSearch = async () => {
     if (!factureId) return;
@@ -32,16 +37,58 @@ export default function Factures() {
   };
 
   const totalVerse = facture?.paiements?.reduce(
-    (sum: number, p: any) => sum + Number(p.montant), 0
+    (sum: number, p: any) => sum + Number(p.montantVerse), 0
   ) ?? 0;
 
-  const reste = facture ? Number(facture.montantTotal) - totalVerse : 0;
+  const reste = facture ? Number(facture.montantTtc) - totalVerse : 0;
 
   return (
     <div className="flex flex-col h-full">
       <TopBar title="Factures" />
       <div className="flex-1 overflow-y-auto p-6">
 
+        {/* Liste des factures */}
+        {factures.length > 0 && !facture && (
+          <div className="bg-[#161b27] border border-[#2d3348] rounded-xl overflow-hidden mb-6">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="border-b border-[#2d3348]">
+                  {['#', 'Montant HT', 'TVA', 'Montant TTC', 'Statut', 'Date', 'Action'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-[11px] text-slate-500 font-normal">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {factures.map((f: any) => (
+                  <tr key={f.id} className="border-b border-[#1a2035] last:border-0 hover:bg-[#1a2035] transition-colors">
+                    <td className="px-4 py-3 text-slate-400">#{f.id?.slice(0, 6)}</td>
+                    <td className="px-4 py-3 text-slate-300">{Number(f.montantHt).toLocaleString()} MAD</td>
+                    <td className="px-4 py-3 text-slate-400">{Number(f.tva)}%</td>
+                    <td className="px-4 py-3 text-indigo-400 font-medium">{Number(f.montantTtc).toLocaleString()} MAD</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColor[f.statutPaiement]}`}>
+                        {f.statutPaiement?.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {new Date(f.dateEmission).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setFacture(f)}
+                        className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
+                      >
+                        Gérer
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Recherche par ID */}
         <div className="flex gap-3 mb-6">
           <input
             value={factureId}
@@ -56,33 +103,54 @@ export default function Factures() {
           >
             {loading ? 'Recherche...' : 'Rechercher'}
           </button>
+          {facture && (
+            <button
+              onClick={() => { setFacture(null); setFactureId(''); }}
+              className="border border-[#2d3348] text-slate-400 text-sm px-4 py-2 rounded-lg hover:border-slate-600 transition-colors"
+            >
+              ← Retour
+            </button>
+          )}
         </div>
 
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
+        {/* Détail facture */}
         {facture && (
           <div className="max-w-2xl">
             <div className="bg-[#161b27] border border-[#2d3348] rounded-xl p-5 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-slate-100 font-medium">Facture #{facture.id?.slice(0, 8)}</h3>
-                  <p className="text-slate-500 text-xs mt-0.5">{new Date(facture.createdAt).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    {new Date(facture.dateEmission).toLocaleDateString('fr-FR')}
+                  </p>
                 </div>
-                <span className={`text-[11px] px-3 py-1 rounded-full font-medium ${statutColor[facture.statut]}`}>
-                  {facture.statut.replace('_', ' ')}
+                <span className={`text-[11px] px-3 py-1 rounded-full font-medium ${statutColor[facture.statutPaiement]}`}>
+                  {facture.statutPaiement?.replace('_', ' ')}
                 </span>
               </div>
 
-              <div className="bg-[#0f1117] rounded-lg p-3">
-                <p className="text-slate-500 text-[10px] mb-1">Montant total</p>
-                <p className="text-indigo-400 text-[13px] font-medium">{Number(facture.montantTotal).toLocaleString()} MAD</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-[#0f1117] rounded-lg p-3">
+                  <p className="text-slate-500 text-[10px] mb-1">Montant HT</p>
+                  <p className="text-slate-300 text-[13px] font-medium">{Number(facture.montantHt).toLocaleString()} MAD</p>
+                </div>
+                <div className="bg-[#0f1117] rounded-lg p-3">
+                  <p className="text-slate-500 text-[10px] mb-1">TVA</p>
+                  <p className="text-slate-300 text-[13px] font-medium">{Number(facture.tva)}%</p>
+                </div>
+                <div className="bg-[#0f1117] rounded-lg p-3">
+                  <p className="text-slate-500 text-[10px] mb-1">Montant TTC</p>
+                  <p className="text-indigo-400 text-[13px] font-medium">{Number(facture.montantTtc).toLocaleString()} MAD</p>
+                </div>
               </div>
             </div>
 
             <div className="bg-[#161b27] border border-[#2d3348] rounded-xl p-5 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-slate-300 text-[13px] font-medium">Paiements effectués</h4>
-                {facture.statut !== 'SOLDE' && (
+                {facture.statutPaiement !== 'SOLDE' && (
                   <button
                     onClick={() => setShowPaiement(true)}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3 py-1.5 rounded-lg transition-colors"
@@ -107,8 +175,8 @@ export default function Factures() {
                     {facture.paiements?.map((p: any, i: number) => (
                       <tr key={i} className="border-b border-[#1a2035] last:border-0">
                         <td className="py-2 text-slate-300">{p.methode}</td>
-                        <td className="py-2 text-green-400">{Number(p.montant).toLocaleString()} MAD</td>
-                        <td className="py-2 text-slate-400">{new Date(p.createdAt).toLocaleDateString('fr-FR')}</td>
+                        <td className="py-2 text-green-400">{Number(p.montantVerse).toLocaleString()} MAD</td>
+                        <td className="py-2 text-slate-400">{new Date(p.datePaiement).toLocaleDateString('fr-FR')}</td>
                       </tr>
                     ))}
                   </tbody>

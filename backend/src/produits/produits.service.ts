@@ -9,16 +9,14 @@ export class ProduitsService {
   private _supabase: any;
 
   constructor(private prisma: PrismaService) {}
-
-  private get supabase() {
-    if (!this._supabase) {
-      const url = process.env.SUPABASE_URL;
-      const key = process.env.SUPABASE_SERVICE_KEY;
-      if (!url || !key) throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_KEY manquant');
-      this._supabase = createClient(url, key);
-    }
-    return this._supabase;
+private get supabase() {
+  if (!this._supabase) {
+    const url = 'https://rxpswtywmlgvnihofoqn.supabase.co';
+    const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cHN3dHl3bWxndm5paG9mb3FuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQ0OTAwOCwiZXhwIjoyMDkyMDI1MDA4fQ.Dt8UCpfdL1APh_nlNrd99M1Ne2t634f2QPHa_uOroU0';
+    this._supabase = createClient(url, key);
   }
+  return this._supabase;
+}
 
   create(vendeurId: string, dto: CreateProduitDto) {
     return this.prisma.produit.create({ data: { vendeurId, ...dto } });
@@ -55,9 +53,24 @@ export class ProduitsService {
     return this.prisma.produit.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
-    return this.prisma.produit.delete({ where: { id } });
+async remove(id: string) {
+  // Supprimer en cascade : varianteItems → variantes → produit
+  const variantes = await this.prisma.variante.findMany({
+    where: { produitId: id },
+  });
+
+  for (const v of variantes) {
+    await this.prisma.varianteItem.deleteMany({
+      where: { varianteId: v.id },
+    });
   }
+
+  await this.prisma.variante.deleteMany({
+    where: { produitId: id },
+  });
+
+  return this.prisma.produit.delete({ where: { id } });
+}
 
   async uploadImage(produitId: string, file: Express.Multer.File) {
     const ext = file.originalname.split('.').pop();

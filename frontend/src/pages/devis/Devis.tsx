@@ -75,15 +75,17 @@ export default function Devis() {
                 <tr key={d.id} className="border-b border-[#1a2035] last:border-0 hover:bg-[#1a2035] transition-colors">
                   <td className="px-4 py-3 text-slate-400">#{d.id?.slice(0, 6)}</td>
                   <td className="px-4 py-3 text-slate-300">
-                    {d.lignes?.map((l: any) => (
-                      <div key={l.produitId} className="text-[11px]">
-                        {l.produit?.nom} × {l.quantite} — {(Number(l.prixUnitaire) * l.quantite).toLocaleString()} MAD
-                      </div>
-                    ))}
+                    
+{d.lignes?.map((l: any, i: number) => (
+  <div key={i} className="text-[11px]">
+    {l.variante?.items?.map((item: any) => item.attributOption?.valeur).join(' / ') || '—'}
+    {' × '}{l.quantite}
+    {' — '}{(Number(l.prixUnitaireSnap) * l.quantite).toLocaleString()} MAD
+  </div>
+))}
                   </td>
                   <td className="px-4 py-3 text-slate-400">
-                    {new Date(d.createdAt).toLocaleDateString('fr-FR')}
-                  </td>
+                    {new Date(d.dateDevis).toLocaleDateString('fr-FR')}                  </td>
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColors[d.statut]}`}>
                       {d.statut}
@@ -91,7 +93,7 @@ export default function Devis() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      {d.statut === 'EN_ATTENTE' && (
+{(d.statut === 'EN_ATTENTE' || d.statut === 'BROUILLON') && (
                         <>
                           <button
                             onClick={() => handleStatut(d.id, 'ACCEPTE')}

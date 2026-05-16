@@ -102,12 +102,16 @@ const handleStep1 = async (e: React.FormEvent) => {
     }
     setCreatedProduitId(pid);
 
-    // Upload image si sélectionnée
+    // Upload image — erreur non bloquante
     if (imageFile && pid) {
-      await produitsService.uploadImage(pid, imageFile);
+      try {
+        await produitsService.uploadImage(pid, imageFile);
+      } catch {
+        console.warn('Upload image échoué — produit créé sans photo');
+      }
     }
 
-    setStep(2);
+    setStep(2);  // ← on passe à l'étape 2 même sans photo
   } catch {
     setError('Erreur lors de la sauvegarde du produit');
   } finally {
@@ -184,21 +188,25 @@ const handleStep1 = async (e: React.FormEvent) => {
       className="w-full h-40 object-cover rounded-lg mb-2 border border-[#2d3348]"
     />
   )}
-  <label className="flex items-center gap-2 cursor-pointer w-full bg-[#0f1117] border border-dashed border-[#2d3348] hover:border-indigo-500 rounded-lg px-3 py-4 text-sm text-slate-500 hover:text-slate-300 transition-colors justify-center">
+  <div
+    onClick={() => document.getElementById('file-upload')?.click()}
+    className="flex items-center gap-2 cursor-pointer w-full bg-[#0f1117] border border-dashed border-[#2d3348] hover:border-indigo-500 rounded-lg px-3 py-4 text-sm text-slate-500 hover:text-slate-300 transition-colors justify-center"
+  >
     <span>📷 {imageFile ? imageFile.name : 'Choisir une photo'}</span>
-    <input
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={e => {
-        const f = e.target.files?.[0];
-        if (f) {
-          setImageFile(f);
-          setImagePreview(URL.createObjectURL(f));
-        }
-      }}
-    />
-  </label>
+  </div>
+  <input
+    id="file-upload"
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={e => {
+      const f = e.target.files?.[0];
+      if (f) {
+        setImageFile(f);
+        setImagePreview(URL.createObjectURL(f));
+      }
+    }}
+  />
 </div>
             <div>
               <label className="text-slate-400 text-xs mb-1 block">Nom du produit</label>

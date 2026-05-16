@@ -33,9 +33,25 @@ export class CategoriesService {
     return this.prisma.categorie.update({ where: { id }, data: dto });
   }
 
-  remove(id: string) {
-    return this.prisma.categorie.delete({ where: { id } });
+ async remove(id: string) {
+  // Supprimer en cascade : options → attributTypes → catégorie
+  const attributTypes = await this.prisma.attributType.findMany({
+    where: { categorieId: id },
+    include: { options: true },
+  });
+
+  for (const at of attributTypes) {
+    await this.prisma.attributOption.deleteMany({
+      where: { attributTypeId: at.id },
+    });
   }
+
+  await this.prisma.attributType.deleteMany({
+    where: { categorieId: id },
+  });
+
+  return this.prisma.categorie.delete({ where: { id } });
+}
 
   addAttributType(categorieId: string, dto: CreateAttributTypeDto) {
     return this.prisma.attributType.create({

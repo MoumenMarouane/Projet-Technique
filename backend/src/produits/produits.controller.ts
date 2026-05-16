@@ -19,12 +19,14 @@ export class ProduitsController {
   @Get(':id/variantes') getVariantes(@Param('id') id: string) { return this.produitsService.getVariantes(id); }
 
   @UseGuards(JwtAuthGuard)
-  @Post()
-  async create(@CurrentUser() user: any, @Body() dto: CreateProduitDto) {
-    const vendeur = await this.vendeursService.findByUserId(user.id);
-    if (!vendeur) throw new Error('Vendeur introuvable');
-    return this.produitsService.create(vendeur.id, dto);
-  }
+@Post()
+async create(@CurrentUser() user: any, @Body() dto: CreateProduitDto) {
+  console.log('USER FROM TOKEN:', JSON.stringify(user));
+  const vendeur = await this.vendeursService.findByUserId(user.id);
+  console.log('VENDEUR FOUND:', JSON.stringify(vendeur));
+  if (!vendeur) throw new Error('Vendeur introuvable');
+  return this.produitsService.create(vendeur.id, dto);
+}
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/variantes')

@@ -15,11 +15,27 @@ export class DevisService {
   }
 
   findAll(clientId?: string, vendeurId?: string) {
-    return this.prisma.devis.findMany({
-      where: { ...(clientId && { clientId }), ...(vendeurId && { vendeurId }) },
-      include: { lignes: { include: { variante: { include: { items: true } } } } },
-    });
-  }
+  return this.prisma.devis.findMany({
+    where: { ...(clientId && { clientId }), ...(vendeurId && { vendeurId }) },
+    include: {
+      lignes: {
+        include: {
+          variante: {
+            include: {
+              items: {
+                include: {
+                  attributOption: {
+                    include: { attributType: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+  });
+}
 
   findOne(id: string) {
     return this.prisma.devis.findUnique({
@@ -28,30 +44,45 @@ export class DevisService {
     });
   }
 
-  async updateStatut(id: string, dto: UpdateStatutDevisDto) {
-    const devis = await this.prisma.devis.update({
-      where: { id },
-      data: { statut: dto.statut },
-      include: { lignes: true },
-    });
+async updateStatut(id: string, dto: UpdateStatutDevisDto) {
+  console.log('updateStatut appelé:', id, dto.statut);
+  
+  const devis = await this.prisma.devis.findUnique({
+    where: { id },
+    include: { lignes: true },
+  });
 
-    if (dto.statut === 'ACCEPTE') {
-      await this.prisma.commande.create({
-        data: {
-          clientId: devis.clientId,
-          vendeurId: devis.vendeurId,
-          type: 'NORMAL',
-          lignes: {
-            create: devis.lignes.map(l => ({
-              varianteId: l.varianteId,       // ← remplace produitId
-              quantite: l.quantite,
-              prixUnitaireSnap: l.prixUnitaireSnap,
-            })),
-          },
+  console.log('Devis trouvé:', JSON.stringify(devis));
+
+  if (!devis) throw new Error('Devis introuvable');
+
+  await this.prisma.devis.update({
+    where: { id },
+    data: { statut: dto.statut },
+  });
+
+  if (dto.statut === 'ACCEPTE') {
+    console.log('Création commande pour lignes:', JSON.stringify(devis.lignes));
+    await this.prisma.commande.create({
+      data: {
+        clientId: devis.clientId,
+        vendeurId: devis.vendeurId,
+        type: 'NORMAL',
+        lignes: {
+          create: devis.lignes.map(l => ({
+            varianteId: l.varianteId,
+            quantite: l.quantite,
+            prixUnitaireSnap: l.prixUnitaireSnap,
+          })),
         },
-      });
-    }
-
-    return devis;
+      },
+    });
+    console.log('Commande créée avec succès');
   }
+
+  return this.prisma.devis.findUnique({
+    where: { id },
+    include: { lignes: true },
+  });
+}
 }

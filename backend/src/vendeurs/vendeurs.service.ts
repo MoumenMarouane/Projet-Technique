@@ -16,4 +16,9 @@ export class VendeursService {
   update(id: string, dto: Partial<CreateVendeurDto>) {
     return this.prisma.vendeur.update({ where: { id }, data: dto });
   }
+  findAll() {
+  return this.prisma.vendeur.findMany({
+    include: { adresses: true, contacts: true, entreprise: true },
+  });
+}
 }
