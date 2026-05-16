@@ -205,6 +205,7 @@ model Produit {
   nom          String
   description  String?
   prixUnitaire Decimal @map("prix_unitaire") @db.Decimal(10, 2)
+  imageUrl     String? @map("image_url")   
   stock        Int     @default(0) // conservé pour les anciens produits
   lignesDevis  LigneDevis[]
   lignesCmd    LigneCommande[]

@@ -6,9 +6,15 @@ export default function Categories() {
   const [categories, setCategories] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ libelle: '', description: '' });
-  const [caracForm, setCaracForm] = useState({ nom: '', categorieId: '' });
-  const [showCarac, setShowCarac] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Modal : ajouter un AttributType à une catégorie
+  const [showAttributType, setShowAttributType] = useState(false);
+  const [attributTypeForm, setAttributTypeForm] = useState({ nom: '', estUnique: false, categorieId: '' });
+
+  // Modal : ajouter une AttributOption à un AttributType
+  const [showOption, setShowOption] = useState(false);
+  const [optionForm, setOptionForm] = useState({ valeur: '', attributTypeId: '', attributTypeNom: '' });
 
   useEffect(() => { fetchCategories(); }, []);
 
@@ -26,12 +32,27 @@ export default function Categories() {
     fetchCategories();
   };
 
-  const handleAddCarac = async (e: React.FormEvent) => {
+  const handleAddAttributType = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await categoriesService.addCaracType(caracForm.categorieId, { nom: caracForm.nom });
-    setCaracForm({ nom: '', categorieId: '' });
-    setShowCarac(false);
+    await categoriesService.addAttributType(attributTypeForm.categorieId, {
+      nom: attributTypeForm.nom,
+      estUnique: attributTypeForm.estUnique,
+    });
+    setAttributTypeForm({ nom: '', estUnique: false, categorieId: '' });
+    setShowAttributType(false);
+    setLoading(false);
+    fetchCategories();
+  };
+
+  const handleAddOption = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    await categoriesService.addAttributOption(optionForm.attributTypeId, {
+      valeur: optionForm.valeur,
+    });
+    setOptionForm({ valeur: '', attributTypeId: '', attributTypeNom: '' });
+    setShowOption(false);
     setLoading(false);
     fetchCategories();
   };
@@ -49,10 +70,10 @@ export default function Categories() {
 
         <div className="flex gap-3 justify-end mb-6">
           <button
-            onClick={() => setShowCarac(true)}
+            onClick={() => setShowAttributType(true)}
             className="border border-indigo-800 text-indigo-400 text-sm px-4 py-2 rounded-lg hover:bg-indigo-950 transition-colors"
           >
-            + Caractéristique
+            + Axe de variation
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -74,20 +95,67 @@ export default function Categories() {
                   Supprimer
                 </button>
               </div>
+
               {cat.description && (
                 <p className="text-slate-500 text-[11px] mb-3">{cat.description}</p>
               )}
+
+              {/* Axes de variation (AttributTypes) */}
               <div>
-                <p className="text-slate-500 text-[10px] mb-2 uppercase tracking-wider">Caractéristiques</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {cat.caracTypes?.length > 0 ? cat.caracTypes.map((ct: any) => (
-                    <span key={ct.id} className="bg-[#0f1117] text-slate-300 text-[10px] px-2 py-1 rounded-md border border-[#2d3348]">
-                      {ct.nom}
-                    </span>
-                  )) : (
-                    <span className="text-slate-600 text-[11px]">Aucune caractéristique</span>
-                  )}
-                </div>
+                <p className="text-slate-500 text-[10px] mb-2 uppercase tracking-wider">
+                  Axes de variation
+                </p>
+
+                {cat.attributTypes?.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {cat.attributTypes.map((at: any) => (
+                      <div key={at.id} className="bg-[#0f1117] border border-[#2d3348] rounded-lg p-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-300 text-[11px] font-medium">{at.nom}</span>
+                            {at.estUnique && (
+                              <span className="text-[9px] bg-amber-900/40 text-amber-400 px-1.5 py-0.5 rounded">
+                                🔑 Unique
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setOptionForm({ valeur: '', attributTypeId: at.id, attributTypeNom: at.nom });
+                              setShowOption(true);
+                            }}
+                            className="text-[10px] text-indigo-400 border border-indigo-900 px-2 py-0.5 rounded hover:border-indigo-600 transition-colors"
+                          >
+                            + Option
+                          </button>
+                        </div>
+                        {/* Options */}
+                        <div className="flex flex-wrap gap-1">
+                          {at.options?.length > 0 ? at.options.map((opt: any) => (
+                            <span key={opt.id} className="text-[10px] bg-indigo-950/60 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-900/40">
+                              {opt.valeur}
+                            </span>
+                          )) : (
+                            <span className="text-slate-600 text-[10px]">Aucune option</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 text-[11px]">Aucun axe défini</span>
+                    <button
+                      onClick={() => {
+                        setAttributTypeForm({ nom: '', estUnique: false, categorieId: cat.id });
+                        setShowAttributType(true);
+                      }}
+                      className="text-[10px] text-indigo-400 border border-indigo-900 px-2 py-0.5 rounded hover:border-indigo-600 transition-colors"
+                    >
+                      + Ajouter un axe
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -132,20 +200,20 @@ export default function Categories() {
         </div>
       )}
 
-      {/* Modal nouvelle caractéristique */}
-      {showCarac && (
+      {/* Modal nouvel AttributType */}
+      {showAttributType && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-[#161b27] border border-[#2d3348] rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-slate-100 font-medium">Nouvelle caractéristique</h2>
-              <button onClick={() => setShowCarac(false)} className="text-slate-500 hover:text-slate-300 text-xl">×</button>
+              <h2 className="text-slate-100 font-medium">Nouvel axe de variation</h2>
+              <button onClick={() => setShowAttributType(false)} className="text-slate-500 hover:text-slate-300 text-xl">×</button>
             </div>
-            <form onSubmit={handleAddCarac} className="flex flex-col gap-4">
+            <form onSubmit={handleAddAttributType} className="flex flex-col gap-4">
               <div>
                 <label className="text-slate-400 text-xs mb-1 block">Catégorie</label>
                 <select
-                  value={caracForm.categorieId}
-                  onChange={e => setCaracForm({ ...caracForm, categorieId: e.target.value })}
+                  value={attributTypeForm.categorieId}
+                  onChange={e => setAttributTypeForm({ ...attributTypeForm, categorieId: e.target.value })}
                   className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                   required
                 >
@@ -156,17 +224,62 @@ export default function Categories() {
                 </select>
               </div>
               <div>
-                <label className="text-slate-400 text-xs mb-1 block">Nom de la caractéristique</label>
+                <label className="text-slate-400 text-xs mb-1 block">Nom de l'axe</label>
                 <input
-                  value={caracForm.nom}
-                  onChange={e => setCaracForm({ ...caracForm, nom: e.target.value })}
-                  placeholder="ex: RAM, Processeur, Taille écran..."
+                  value={attributTypeForm.nom}
+                  onChange={e => setAttributTypeForm({ ...attributTypeForm, nom: e.target.value })}
+                  placeholder="ex: Couleur, Taille, N° série..."
+                  className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-3 bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2">
+                <input
+                  type="checkbox"
+                  id="estUnique"
+                  checked={attributTypeForm.estUnique}
+                  onChange={e => setAttributTypeForm({ ...attributTypeForm, estUnique: e.target.checked })}
+                  className="accent-indigo-500"
+                />
+                <label htmlFor="estUnique" className="text-slate-300 text-sm cursor-pointer">
+                  Identifiant unique <span className="text-slate-500 text-xs">(ex: N° série → quantité forcée à 1)</span>
+                </label>
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowAttributType(false)} className="flex-1 py-2 text-sm border border-[#2d3348] text-slate-400 rounded-lg">Annuler</button>
+                <button type="submit" disabled={loading} className="flex-1 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50">
+                  {loading ? 'Ajout...' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nouvelle AttributOption */}
+      {showOption && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-[#161b27] border border-[#2d3348] rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-slate-100 font-medium">Nouvelle option</h2>
+                <p className="text-slate-500 text-xs mt-0.5">Axe : {optionForm.attributTypeNom}</p>
+              </div>
+              <button onClick={() => setShowOption(false)} className="text-slate-500 hover:text-slate-300 text-xl">×</button>
+            </div>
+            <form onSubmit={handleAddOption} className="flex flex-col gap-4">
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">Valeur</label>
+                <input
+                  value={optionForm.valeur}
+                  onChange={e => setOptionForm({ ...optionForm, valeur: e.target.value })}
+                  placeholder="ex: Rouge, 39, 128Go, SN-ABC123..."
                   className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                   required
                 />
               </div>
               <div className="flex gap-3">
-                <button type="button" onClick={() => setShowCarac(false)} className="flex-1 py-2 text-sm border border-[#2d3348] text-slate-400 rounded-lg">Annuler</button>
+                <button type="button" onClick={() => setShowOption(false)} className="flex-1 py-2 text-sm border border-[#2d3348] text-slate-400 rounded-lg">Annuler</button>
                 <button type="submit" disabled={loading} className="flex-1 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50">
                   {loading ? 'Ajout...' : 'Ajouter'}
                 </button>

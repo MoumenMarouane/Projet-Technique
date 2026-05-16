@@ -1,11 +1,24 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProduitDto } from './dto/create-produit.dto';
 import { CreateVarianteDto } from './dto/create-variante.dto';
+import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class ProduitsService {
+  private _supabase: any;
+
   constructor(private prisma: PrismaService) {}
+
+  private get supabase() {
+    if (!this._supabase) {
+      const url = process.env.SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_KEY;
+      if (!url || !key) throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_KEY manquant');
+      this._supabase = createClient(url, key);
+    }
+    return this._supabase;
+  }
 
   create(vendeurId: string, dto: CreateProduitDto) {
     return this.prisma.produit.create({ data: { vendeurId, ...dto } });
@@ -46,10 +59,30 @@ export class ProduitsService {
     return this.prisma.produit.delete({ where: { id } });
   }
 
-  // ── Variantes ──────────────────────────────────────────────
+  async uploadImage(produitId: string, file: Express.Multer.File) {
+    const ext = file.originalname.split('.').pop();
+    const fileName = `${produitId}-${Date.now()}.${ext}`;
+
+    const { error } = await this.supabase.storage
+      .from('produits-images')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true,
+      });
+
+    if (error) throw new Error(`Upload échoué : ${error.message}`);
+
+    const { data } = this.supabase.storage
+      .from('produits-images')
+      .getPublicUrl(fileName);
+
+    return this.prisma.produit.update({
+      where: { id: produitId },
+      data: { imageUrl: data.publicUrl },
+    });
+  }
 
   async createVariante(produitId: string, dto: CreateVarianteDto) {
-    // Vérifier si une option est de type unique → stock forcé à 1
     if (dto.attributOptionIds?.length) {
       const options = await this.prisma.attributOption.findMany({
         where: { id: { in: dto.attributOptionIds } },

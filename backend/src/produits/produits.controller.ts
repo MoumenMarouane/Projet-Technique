@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProduitsService } from './produits.service';
 import { CreateProduitDto } from './dto/create-produit.dto';
 import { CreateVarianteDto } from './dto/create-variante.dto';
@@ -29,6 +30,13 @@ export class ProduitsController {
   @Post(':id/variantes')
   createVariante(@Param('id') id: string, @Body() dto: CreateVarianteDto) {
     return this.produitsService.createVariante(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/image')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    return this.produitsService.uploadImage(id, file);
   }
 
   @UseGuards(JwtAuthGuard)

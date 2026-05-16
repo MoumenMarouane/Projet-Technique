@@ -1,11 +1,11 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 export type Role = 'VENDEUR' | 'CLIENT';
-export type TypeClient = 'PARTICULIER' | 'PROFESSIONNEL';
-export type StatutDevis = 'EN_ATTENTE' | 'ACCEPTE' | 'REFUSE' | 'EXPIRE';
-export type StatutCommande = 'EN_COURS' | 'LIVREE' | 'ANNULEE';
+export type TypeClient = 'LEGAL' | 'ANONYME';
+export type StatutDevis = 'BROUILLON' | 'ENVOYE' | 'ACCEPTE' | 'REFUSE' | 'EXPIRE';
+export type StatutCommande = 'EN_ATTENTE' | 'CONFIRMEE' | 'EN_COURS' | 'LIVREE' | 'ANNULEE';
 export type StatutPaiement = 'NON_PAYE' | 'PARTIEL' | 'SOLDE';
-export type MethodePaiement = 'ESPECES' | 'VIREMENT' | 'CHEQUE' | 'CARTE';
-export type TypeCommande = 'FACTURE' | 'TICKET';
+export type MethodePaiement = 'ESPECES' | 'VIREMENT' | 'CHEQUE' | 'ONLINE';
+export type TypeCommande = 'NORMAL' | 'ANONYME';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export interface User {
@@ -14,64 +14,81 @@ export interface User {
   role: Role;
 }
 
-// ─── Entités de base ──────────────────────────────────────────────────────────
+// ─── Catalogue – nouveau système ──────────────────────────────────────────────
+
+export interface AttributType {
+  id: string;
+  nom: string;           // "Couleur", "Taille", "N° série"
+  estUnique: boolean;    // true → stock forcé à 1 (ex: N° série)
+  categorieId: string;
+  options?: AttributOption[];
+}
+
+export interface AttributOption {
+  id: string;
+  valeur: string;        // "Rouge", "39", "SN-ABC123"
+  attributTypeId: string;
+  attributType?: AttributType;
+}
+
+export interface VarianteItem {
+  varianteId: string;
+  attributOptionId: string;
+  attributOption?: AttributOption;
+}
+
+export interface Variante {
+  id: string;
+  produitId: string;
+  stock: number;
+  prixModif?: number;    // surcharge optionnelle du prix de base
+  items?: VarianteItem[];
+}
+
+// ─── Catégorie ────────────────────────────────────────────────────────────────
 export interface Categorie {
   id: string;
-  nom: string;
+  libelle: string;
   description?: string;
-  caracTypes?: CaracType[];
+  imageUrl?: string;     // photo illustrant la catégorie
+  attributTypes?: AttributType[];
 }
 
-export interface CaracType {
-  id: string;
-  nom: string;
-  categorieId: string;
-}
-
+// ─── Produit ──────────────────────────────────────────────────────────────────
 export interface Produit {
   id: string;
   nom: string;
   description?: string;
-  prix: number;
-  stock: number;
+  prixUnitaire: number;
+  imageUrl?: string;     // photo principale du produit
   categorieId: string;
   categorie?: Categorie;
-  caracValeurs?: CaracValeur[];
+  variantes?: Variante[];
 }
 
-export interface CaracValeur {
-  id: string;
-  valeur: string;
-  produitId: string;
-  caracTypeId: string;
-  caracType?: CaracType;
-}
-
+// ─── Client & Vendeur ─────────────────────────────────────────────────────────
 export interface Client {
   id: string;
-  nom: string;
-  prenom?: string;
-  email?: string;
-  telephone?: string;
-  typeClient: TypeClient;
+  type: TypeClient;
   userId?: string;
+  statut?: string;
 }
 
 export interface Vendeur {
   id: string;
-  nom: string;
-  prenom?: string;
-  email?: string;
+  boutiqueNom: string;
+  boutiqueDesc?: string;
   userId: string;
 }
 
 // ─── Devis ────────────────────────────────────────────────────────────────────
 export interface LigneDevis {
   id: string;
-  produitId: string;
-  produit?: Produit;
+  devisId: string;
+  varianteId?: string;
+  variante?: Variante;
   quantite: number;
-  prixUnitaire: number;
+  prixUnitaireSnap: number;
 }
 
 export interface Devis {
@@ -82,24 +99,23 @@ export interface Devis {
   vendeurId: string;
   vendeur?: Vendeur;
   lignes?: LigneDevis[];
-  total?: number;
-  createdAt: string;
-  updatedAt: string;
+  dateDevis: string;
 }
 
 // ─── Commandes ────────────────────────────────────────────────────────────────
 export interface LigneCommande {
   id: string;
-  produitId: string;
-  produit?: Produit;
+  commandeId: string;
+  varianteId?: string;
+  variante?: Variante;
   quantite: number;
-  prixUnitaire: number;
+  prixUnitaireSnap: number;
 }
 
 export interface Commande {
   id: string;
   statut: StatutCommande;
-  typeCommande: TypeCommande;
+  type: TypeCommande;
   clientId: string;
   client?: Client;
   vendeurId: string;
@@ -107,35 +123,36 @@ export interface Commande {
   lignes?: LigneCommande[];
   facture?: Facture;
   ticket?: Ticket;
-  total?: number;
-  createdAt: string;
-  updatedAt: string;
+  dateCommande: string;
 }
 
 // ─── Factures & Tickets ───────────────────────────────────────────────────────
 export interface Paiement {
   id: string;
-  montant: number;
+  montantVerse: number;
   methode: MethodePaiement;
   factureId: string;
-  createdAt: string;
+  datePaiement: string;
+  reference?: string;
 }
 
 export interface Facture {
   id: string;
-  statut: StatutPaiement;
+  statutPaiement: StatutPaiement;
   commandeId: string;
   commande?: Commande;
   paiements?: Paiement[];
-  montantTotal: number;
-  montantPaye?: number;
-  createdAt: string;
+  montantHt: number;
+  tva: number;
+  montantTtc: number;
+  dateEmission: string;
 }
 
 export interface Ticket {
   id: string;
   commandeId: string;
-  createdAt: string;
+  montantTotal: number;
+  dateEmission: string;
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
