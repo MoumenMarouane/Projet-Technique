@@ -3,10 +3,12 @@ import TopBar from '../../components/layout/TopBar';
 import { commandesService } from '../../services/commandes.service';
 import CommandeDetail from './CommandeDetail';
 
-const STATUTS = ['Tous', 'EN_COURS', 'LIVREE', 'ANNULEE'];
+const STATUTS = ['Tous', 'EN_ATTENTE', 'CONFIRMEE', 'EN_COURS', 'LIVREE', 'ANNULEE'];
 
 const statutColors: Record<string, string> = {
-  EN_COURS: 'bg-blue-950 text-blue-400',
+  EN_ATTENTE: 'bg-orange-950 text-orange-400',
+  CONFIRMEE: 'bg-blue-950 text-blue-400',
+  EN_COURS: 'bg-indigo-950 text-indigo-400',
   LIVREE: 'bg-green-950 text-green-400',
   ANNULEE: 'bg-red-950 text-red-400',
 };
@@ -17,8 +19,12 @@ export default function Commandes() {
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
-    commandesService.getAll().then(r => setCommandes(r.data));
+    fetchCommandes();
   }, []);
+
+  const fetchCommandes = () => {
+    commandesService.getAll().then(r => setCommandes(r.data));
+  };
 
   const filtered = commandes.filter(c =>
     filtre === 'Tous' ? true : c.statut === filtre
@@ -26,7 +32,7 @@ export default function Commandes() {
 
   const handleStatut = async (id: string, statut: string) => {
     await commandesService.updateStatut(id, statut);
-    commandesService.getAll().then(r => setCommandes(r.data));
+    fetchCommandes();
   };
 
   return (
@@ -34,7 +40,7 @@ export default function Commandes() {
       <TopBar title="Commandes" />
       <div className="flex-1 overflow-y-auto p-6">
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           {STATUTS.map(s => (
             <button
               key={s}
@@ -64,35 +70,57 @@ export default function Commandes() {
                 <tr key={c.id} className="border-b border-[#1a2035] last:border-0 hover:bg-[#1a2035] transition-colors">
                   <td className="px-4 py-3 text-slate-400">#{c.id?.slice(0, 6)}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      c.typeCommande === 'TICKET' ? 'bg-gray-900 text-gray-400' : 'bg-indigo-950 text-indigo-400'
-                    }`}>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-400">
                       {c.type}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-300">{c.lignes?.length ?? 0} article(s)</td>
                   <td className="px-4 py-3 text-slate-400">
-                   {new Date(c.dateCommande).toLocaleDateString('fr-FR')}
+                    {new Date(c.dateCommande).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColors[c.statut]}`}>
-                      {c.statut.replace('_', ' ')}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statutColors[c.statut] ?? 'bg-gray-900 text-gray-400'}`}>
+                      {c.statut?.replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={() => setSelected(c)}
                         className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
                       >
                         Détail
                       </button>
+                      {c.statut === 'EN_ATTENTE' && (
+                        <button
+                          onClick={() => handleStatut(c.id, 'CONFIRMEE')}
+                          className="text-blue-400 text-[11px] px-2 py-1 rounded border border-blue-900 hover:border-blue-700 transition-colors"
+                        >
+                          Confirmer
+                        </button>
+                      )}
+                      {c.statut === 'CONFIRMEE' && (
+                        <button
+                          onClick={() => handleStatut(c.id, 'EN_COURS')}
+                          className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
+                        >
+                          Traiter
+                        </button>
+                      )}
                       {c.statut === 'EN_COURS' && (
                         <button
                           onClick={() => handleStatut(c.id, 'LIVREE')}
                           className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors"
                         >
                           Livrer
+                        </button>
+                      )}
+                      {(c.statut === 'EN_ATTENTE' || c.statut === 'CONFIRMEE') && (
+                        <button
+                          onClick={() => handleStatut(c.id, 'ANNULEE')}
+                          className="text-red-400 text-[11px] px-2 py-1 rounded border border-red-900 hover:border-red-700 transition-colors"
+                        >
+                          Annuler
                         </button>
                       )}
                     </div>

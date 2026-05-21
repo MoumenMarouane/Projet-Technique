@@ -231,7 +231,7 @@ export default function PaiementForm({ factureId, reste, onClose, onSuccess }: P
                 <input
                   value={card.nom}
                   onChange={e => setCard({ ...card, nom: e.target.value.toUpperCase() })}
-                  placeholder="MAROUANE MOUMEN"
+                  placeholder="MAROUANE ALAMI "
                   className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -280,7 +280,8 @@ export default function PaiementForm({ factureId, reste, onClose, onSuccess }: P
               value={montant}
               onChange={e => setMontant(e.target.value)}
               max={reste}
-              min={1}
+              min={0.01}
+              step={0.01}
               className="w-full bg-[#0f1117] border border-[#2d3348] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
               required
             />
