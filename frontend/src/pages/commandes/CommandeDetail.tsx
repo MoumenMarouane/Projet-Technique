@@ -5,8 +5,14 @@ interface Props {
 
 export default function CommandeDetail({ commande, onClose }: Props) {
   const total = commande.lignes?.reduce(
-    (sum: number, l: any) => sum + Number(l.prixUnitaire) * l.quantite, 0
+    (sum: number, l: any) => sum + Number(l.prixUnitaireSnap) * l.quantite, 0
   ) ?? 0;
+
+  const getVarianteLabel = (l: any) => {
+    const items = l.variante?.items;
+    if (!items?.length) return '—';
+    return items.map((item: any) => item.attributOption?.valeur ?? '').join(' / ');
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -14,7 +20,9 @@ export default function CommandeDetail({ commande, onClose }: Props) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-slate-100 font-medium">Commande #{commande.id?.slice(0, 6)}</h2>
-            <p className="text-slate-500 text-xs mt-0.5">{new Date(commande.createdAt).toLocaleDateString('fr-FR')}</p>
+            <p className="text-slate-500 text-xs mt-0.5">
+              {new Date(commande.dateCommande).toLocaleDateString('fr-FR')}
+            </p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-xl">×</button>
         </div>
@@ -22,7 +30,7 @@ export default function CommandeDetail({ commande, onClose }: Props) {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-[#0f1117] rounded-lg p-3">
             <p className="text-slate-500 text-[10px] mb-1">Type</p>
-            <p className="text-slate-200 text-[12px]">{commande.typeCommande}</p>
+            <p className="text-slate-200 text-[12px]">{commande.type}</p>
           </div>
           <div className="bg-[#0f1117] rounded-lg p-3">
             <p className="text-slate-500 text-[10px] mb-1">Statut</p>
@@ -35,7 +43,7 @@ export default function CommandeDetail({ commande, onClose }: Props) {
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-[#2d3348]">
-                <th className="px-3 py-2 text-left text-[11px] text-slate-500 font-normal">Produit</th>
+                <th className="px-3 py-2 text-left text-[11px] text-slate-500 font-normal">Variante</th>
                 <th className="px-3 py-2 text-left text-[11px] text-slate-500 font-normal">Qté</th>
                 <th className="px-3 py-2 text-left text-[11px] text-slate-500 font-normal">Prix unit.</th>
                 <th className="px-3 py-2 text-left text-[11px] text-slate-500 font-normal">Sous-total</th>
@@ -44,10 +52,12 @@ export default function CommandeDetail({ commande, onClose }: Props) {
             <tbody>
               {commande.lignes?.map((l: any, i: number) => (
                 <tr key={i} className="border-b border-[#1a2035] last:border-0">
-                  <td className="px-3 py-2 text-slate-300">{l.produit?.nom ?? '—'}</td>
+                  <td className="px-3 py-2 text-slate-300">{getVarianteLabel(l)}</td>
                   <td className="px-3 py-2 text-slate-400">{l.quantite}</td>
-                  <td className="px-3 py-2 text-slate-400">{Number(l.prixUnitaire).toLocaleString()} MAD</td>
-                  <td className="px-3 py-2 text-slate-300">{(Number(l.prixUnitaire) * l.quantite).toLocaleString()} MAD</td>
+                  <td className="px-3 py-2 text-slate-400">{Number(l.prixUnitaireSnap).toLocaleString()} MAD</td>
+                  <td className="px-3 py-2 text-slate-300">
+                    {(Number(l.prixUnitaireSnap) * l.quantite).toLocaleString()} MAD
+                  </td>
                 </tr>
               ))}
             </tbody>
