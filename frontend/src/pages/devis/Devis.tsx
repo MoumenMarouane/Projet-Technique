@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
 import { devisService } from '../../services/devis.service';
 import DevisForm from './DevisForm';
+import { useAuthStore } from '../../store/authStore';
 
 const STATUTS = ['Tous', 'EN_ATTENTE', 'ACCEPTE', 'REFUSE', 'EXPIRE'];
 
@@ -13,6 +14,7 @@ const statutColors: Record<string, string> = {
 };
 
 export default function Devis() {
+  const { user } = useAuthStore();  
   const [devis, setDevis] = useState<any[]>([]);
   const [filtre, setFiltre] = useState('Tous');
   const [showForm, setShowForm] = useState(false);
@@ -93,8 +95,7 @@ export default function Devis() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-{(d.statut === 'EN_ATTENTE' || d.statut === 'BROUILLON') && (
-                        <>
+    {user?.role === 'VENDEUR' && (d.statut === 'EN_ATTENTE' || d.statut === 'BROUILLON') && (                        <>
                           <button
                             onClick={() => handleStatut(d.id, 'ACCEPTE')}
                             className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors"

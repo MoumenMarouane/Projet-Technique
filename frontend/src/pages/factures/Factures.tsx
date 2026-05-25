@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
 import { facturesService } from '../../services/factures.service';
 import PaiementForm from './PaiementForm';
+import { useAuthStore } from '../../store/authStore';
+
 
 const statutColor: Record<string, string> = {
   NON_PAYE: 'bg-red-950 text-red-400',
@@ -10,12 +12,17 @@ const statutColor: Record<string, string> = {
 };
 
 export default function Factures() {
+  const { user } = useAuthStore();
   const [factures, setFactures] = useState<any[]>([]);
   const [factureId, setFactureId] = useState('');
-  const [facture, setFacture] = useState<any>(null);
+  const [facture, setFacture] = useState<any>(null);  // ← doit être déclaré AVANT
   const [showPaiement, setShowPaiement] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const peutPayer =
+  user?.role === 'VENDEUR' ||
+  (user?.role === 'CLIENT' && facture?.commande?.client?.userId === user?.id);
 
   useEffect(() => {
     facturesService.getAll().then(r => setFactures(r.data)).catch(() => {});
@@ -75,11 +82,14 @@ export default function Factures() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => setFacture(f)}
-                        className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
-                      >
-                        Gérer
-                      </button>
+  onClick={async () => {
+    const res = await facturesService.getOne(f.id);
+    setFacture(res.data);
+  }}
+  className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
+>
+  {user?.role === 'VENDEUR' ? 'Gérer' : 'Voir'}
+</button>
                     </td>
                   </tr>
                 ))}
@@ -150,7 +160,7 @@ export default function Factures() {
             <div className="bg-[#161b27] border border-[#2d3348] rounded-xl p-5 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-slate-300 text-[13px] font-medium">Paiements effectués</h4>
-                {facture.statutPaiement !== 'SOLDE' && (
+                    {facture.statutPaiement !== 'SOLDE' && peutPayer && (
                   <button
                     onClick={() => setShowPaiement(true)}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3 py-1.5 rounded-lg transition-colors"

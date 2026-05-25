@@ -13,12 +13,17 @@ export class FacturesService {
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.facture.findUnique({
-      where: { id },
-      include: { paiements: true, commande: true },
-    });
-  }
+findOne(id: string) {
+  return this.prisma.facture.findUnique({
+    where: { id },
+    include: {
+      paiements: true,
+      commande: {
+        include: { client: true }, // ← clientId accessible via facture.commande.client.userId
+      },
+    },
+  });
+}
 
   findByCommande(commandeId: string) {
     return this.prisma.facture.findUnique({
@@ -26,12 +31,20 @@ export class FacturesService {
       include: { paiements: true },
     });
   }
- findAll(userId: string) {
+ 
+  findAll(userId: string, role: string) {
+  if (role === 'VENDEUR') {
+    return this.prisma.facture.findMany({
+      where: { commande: { vendeur: { userId } } },
+      include: { commande: true, paiements: true },
+    });
+  }
   return this.prisma.facture.findMany({
-    where: { commande: { vendeur: { userId } } },
+    where: { commande: { client: { userId } } },
     include: { commande: true, paiements: true },
   });
 }
+
   async addPaiement(factureId: string, dto: CreatePaiementDto) {
     const facture = await this.prisma.facture.findUnique({
       where: { id: factureId },

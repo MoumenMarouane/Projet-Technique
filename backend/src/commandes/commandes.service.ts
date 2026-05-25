@@ -8,11 +8,19 @@ import { TypeCommande } from '@prisma/client';
 export class CommandesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(clientId: string, dto: CreateCommandeDto) {
-    const resolvedClientId = dto.clientId ?? clientId;
+  async create(userId: string, dto: CreateCommandeDto) {
+  let resolvedClientId = dto.clientId;
 
-    // Vérifier stock et règle estUnique pour chaque ligne
-    for (const ligne of dto.lignes) {
+  if (!resolvedClientId) {
+    const client = await this.prisma.client.findFirst({
+      where: { userId },
+    });
+    if (!client) throw new BadRequestException('Client introuvable');
+    resolvedClientId = client.id;
+  }
+
+  // Vérifier stock et règle estUnique pour chaque ligne
+  for (const ligne of dto.lignes) {
       const variante = await this.prisma.variante.findUnique({
         where: { id: ligne.varianteId },
         include: { items: { include: { attributOption: { include: { attributType: true } } } } },
@@ -76,23 +84,26 @@ export class CommandesService {
   }
 
   async updateStatut(id: string, dto: UpdateStatutCommandeDto) {
-    const commande = await this.prisma.commande.update({
-      where: { id },
-      data: { statut: dto.statut },
-      include: { lignes: true },
+  const commande = await this.prisma.commande.update({
+    where: { id },
+    data: { statut: dto.statut },
+    include: { lignes: true },
+  });
+
+  if (dto.statut === 'CONFIRMEE' && commande.type === TypeCommande.NORMAL) {
+    // Facture uniquement pour les clients NORMAL
+    const montantHt = commande.lignes.reduce(
+      (sum, l) => sum + Number(l.prixUnitaireSnap) * l.quantite, 0
+    );
+    const tva = 20;
+    const montantTtc = montantHt * (1 + tva / 100);
+    await this.prisma.facture.create({
+      data: { commandeId: commande.id, montantHt, tva, montantTtc },
     });
-
-    if (dto.statut === 'CONFIRMEE') {
-      const montantHt = commande.lignes.reduce(
-        (sum, l) => sum + Number(l.prixUnitaireSnap) * l.quantite, 0
-      );
-      const tva = 20;
-      const montantTtc = montantHt * (1 + tva / 100);
-      await this.prisma.facture.create({
-        data: { commandeId: commande.id, montantHt, tva, montantTtc },
-      });
-    }
-
-    return commande;
   }
+
+  // Ticket déjà créé à la création pour ANONYME — rien à faire ici
+
+  return commande;
+}
 }

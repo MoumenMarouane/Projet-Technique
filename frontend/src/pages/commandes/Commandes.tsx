@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
 import { commandesService } from '../../services/commandes.service';
 import CommandeDetail from './CommandeDetail';
+import { useAuthStore } from '../../store/authStore';
 
 const STATUTS = ['Tous', 'EN_ATTENTE', 'CONFIRMEE', 'EN_COURS', 'LIVREE', 'ANNULEE'];
 
@@ -14,6 +15,7 @@ const statutColors: Record<string, string> = {
 };
 
 export default function Commandes() {
+  const { user } = useAuthStore();
   const [commandes, setCommandes] = useState<any[]>([]);
   const [filtre, setFiltre] = useState('Tous');
   const [selected, setSelected] = useState<any>(null);
@@ -83,48 +85,49 @@ export default function Commandes() {
                       {c.statut?.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => setSelected(c)}
-                        className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
-                      >
-                        Détail
-                      </button>
-                      {c.statut === 'EN_ATTENTE' && (
-                        <button
-                          onClick={() => handleStatut(c.id, 'CONFIRMEE')}
-                          className="text-blue-400 text-[11px] px-2 py-1 rounded border border-blue-900 hover:border-blue-700 transition-colors"
-                        >
-                          Confirmer
-                        </button>
-                      )}
-                      {c.statut === 'CONFIRMEE' && (
-                        <button
-                          onClick={() => handleStatut(c.id, 'EN_COURS')}
-                          className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
-                        >
-                          Traiter
-                        </button>
-                      )}
-                      {c.statut === 'EN_COURS' && (
-                        <button
-                          onClick={() => handleStatut(c.id, 'LIVREE')}
-                          className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors"
-                        >
-                          Livrer
-                        </button>
-                      )}
-                      {(c.statut === 'EN_ATTENTE' || c.statut === 'CONFIRMEE') && (
-                        <button
-                          onClick={() => handleStatut(c.id, 'ANNULEE')}
-                          className="text-red-400 text-[11px] px-2 py-1 rounded border border-red-900 hover:border-red-700 transition-colors"
-                        >
-                          Annuler
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                 <td className="px-4 py-3">
+  <div className="flex gap-2 flex-wrap">
+    
+    {/* Détail — visible par tous */}
+    <button
+      onClick={() => setSelected(c)}
+      className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors"
+    >
+      Détail
+    </button>
+
+    {/* Actions — vendeur uniquement */}
+    {user?.role === 'VENDEUR' && (
+      <>
+        {c.statut === 'EN_ATTENTE' && (
+          <button onClick={() => handleStatut(c.id, 'CONFIRMEE')}
+            className="text-blue-400 text-[11px] px-2 py-1 rounded border border-blue-900 hover:border-blue-700 transition-colors">
+            Confirmer
+          </button>
+        )}
+        {c.statut === 'CONFIRMEE' && (
+          <button onClick={() => handleStatut(c.id, 'EN_COURS')}
+            className="text-indigo-400 text-[11px] px-2 py-1 rounded border border-indigo-900 hover:border-indigo-700 transition-colors">
+            Traiter
+          </button>
+        )}
+        {c.statut === 'EN_COURS' && (
+          <button onClick={() => handleStatut(c.id, 'LIVREE')}
+            className="text-green-400 text-[11px] px-2 py-1 rounded border border-green-900 hover:border-green-700 transition-colors">
+            Livrer
+          </button>
+        )}
+        {(c.statut === 'EN_ATTENTE' || c.statut === 'CONFIRMEE') && (
+          <button onClick={() => handleStatut(c.id, 'ANNULEE')}
+            className="text-red-400 text-[11px] px-2 py-1 rounded border border-red-900 hover:border-red-700 transition-colors">
+            Annuler
+          </button>
+        )}
+      </>
+    )}
+
+  </div>
+</td>
                 </tr>
               ))}
               {filtered.length === 0 && (

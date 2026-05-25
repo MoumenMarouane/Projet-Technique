@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { facturesService } from '../../services/factures.service';
+import { useAuthStore } from '../../store/authStore';
+
 
 interface Props {
   factureId: string;
@@ -41,14 +43,19 @@ function formatExpiry(val: string): string {
 }
 
 export default function PaiementForm({ factureId, reste, onClose, onSuccess }: Props) {
-  const [methode, setMethode] = useState<Methode>('CARD');
+  const { user } = useAuthStore();
+  
+  const methodesDisponibles: Methode[] = user?.role === 'CLIENT'
+    ? ['CARD']
+    : ['CARD', 'ESPECES', 'VIREMENT', 'CHEQUE'];
+
+  const [methode, setMethode] = useState<Methode>('CARD'); // ← une seule fois
   const [card, setCard] = useState({ numero: '', expiry: '', cvv: '', nom: '' });
   const [montant, setMontant] = useState(reste.toString());
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [flipped, setFlipped] = useState(false);
-
   const cardType = detectCard(card.numero);
   const cardNumClean = card.numero.replace(/\s/g, '');
   const isCardValid = cardNumClean.length === 16 && luhn(cardNumClean);
@@ -126,18 +133,18 @@ export default function PaiementForm({ factureId, reste, onClose, onSuccess }: P
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
 
           {/* Méthode de paiement */}
-          <div className="grid grid-cols-4 gap-2">
-            {(['CARD', 'ESPECES', 'VIREMENT', 'CHEQUE'] as Methode[]).map(m => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMethode(m)}
-                className={`py-2 text-[10px] rounded-lg border transition-colors flex flex-col items-center gap-1 ${
-                  methode === m
-                    ? 'bg-[#1e2a4a] text-indigo-400 border-indigo-800'
-                    : 'border-[#2d3348] text-slate-500 hover:border-slate-600'
-                }`}
-              >
+          <div className={`grid gap-2 ${methodesDisponibles.length === 1 ? 'grid-cols-1' : 'grid-cols-4'}`}>
+  {methodesDisponibles.map(m => (
+    <button
+      key={m}
+      type="button"
+      onClick={() => setMethode(m)}
+      className={`py-2 text-[10px] rounded-lg border transition-colors flex flex-col items-center gap-1 ${
+        methode === m
+          ? 'bg-[#1e2a4a] text-indigo-400 border-indigo-800'
+          : 'border-[#2d3348] text-slate-500 hover:border-slate-600'
+      }`}
+    >
                 {m === 'CARD' && '💳'}
                 {m === 'ESPECES' && '💵'}
                 {m === 'VIREMENT' && '🏦'}
