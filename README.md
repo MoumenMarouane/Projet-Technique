@@ -471,7 +471,49 @@ Règles métier :
 ```
 
 ---
+## 👥 Diagramme de classes — Rôles & responsabilités
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              <<abstract>>                               │
+│                                  USER                                   │
+│                     email · passwordHash · role                         │
+└──────────────────────────┬──────────────────┘└──────────────────────────
+│
+┌────────────┴────────────┐         ┌────────────┴────────────┐
+│                         │         │                         │
+│                         │         │                         │
+│      role = VENDEUR     │         │      role = CLIENT      │
+▼                         ▼         ▼                         ▼
+┌──────────────────────────┐        ┌──────────────────────────┐
+│         VENDEUR          │        │         CLIENT           │
+│  boutiqueNom             │        │  type: LEGAL | ANONYME   │
+├──────────────────────────┤        ├──────────────────────────┤
+│ + gérerCatalogue()       │        │ + soumettreDevis()       │
+│ + créerProduit()         │        │ + consulterDevis()       │
+│ + gérerVariantes()       │        │ + consulterCommandes()   │
+│ + consulterDevis()       │        │ + consulterFactures()    │
+│ + accepterDevis()        │        │ + payerParCarte()        │
+│ + refuserDevis()         │        └──────────────────────────┘
+│ + gérerCommandes()       │
+│ + confirmerCommande()    │        ┌──────────────────────────┐
+│ + livrerCommande()       │        │     CLIENT ANONYME       │
+│ + consulterFactures()    │        │  (pas de compte USER)    │
+│ + enregistrerPaiement()  │        ├──────────────────────────┤
+│ + émettreTicketCaisse()  │        │ créé automatiquement     │
+│ + consulterTickets()     │        │ lors d'une vente caisse  │
+│ + consulterDashboard()   │        └──────────────────────────┘
+└──────────────────────────┘
+Règles :
 
+Un USER est soit VENDEUR soit CLIENT — jamais les deux
+CLIENT ANONYME n'a pas de compte : userId = null
+Seul le VENDEUR voit le dashboard et émet des tickets
+Seul le CLIENT peut initier un devis
+Les deux peuvent payer par carte, mais :
+└─ CLIENT : carte uniquement
+└─ VENDEUR : carte + espèces + virement + chèque
+
+
+---
 ## 🏷️ Enums Prisma
 
 | Enum | Valeurs |
