@@ -291,6 +291,5 @@ Noir  / 39  → stock: 3
 *École Supérieure de Technologie de Fès — 2025-2026*
 
 **Marouane MOUMEN**
-**Outmane ALAMI**
 
 </div>
