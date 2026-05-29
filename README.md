@@ -513,8 +513,6 @@ Les deux peuvent payer par carte, mais :
 
 
 ---
-
----
 ## 🏷️ Enums Prisma
 
 | Enum | Valeurs |
