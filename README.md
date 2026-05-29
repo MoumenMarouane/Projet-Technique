@@ -476,32 +476,31 @@ Règles métier :
 │                              <<abstract>>                               │
 │                                  USER                                   │
 │                     email · passwordHash · role                         │
-└──────────────────────────┬──────────────────┘└──────────────────────────
+└──────────────────────────┬──────────────────┘
 │
-┌────────────┴────────────┐         ┌────────────┴────────────┐
-│                         │         │                         │
-│                         │         │                         │
-│      role = VENDEUR     │         │      role = CLIENT      │
-▼                         ▼         ▼                         ▼
-┌──────────────────────────┐        ┌──────────────────────────┐
-│         VENDEUR          │        │         CLIENT           │
-│  boutiqueNom             │        │  type: LEGAL | ANONYME   │
-├──────────────────────────┤        ├──────────────────────────┤
-│ + gérerCatalogue()       │        │ + soumettreDevis()       │
-│ + créerProduit()         │        │ + consulterDevis()       │
-│ + gérerVariantes()       │        │ + consulterCommandes()   │
-│ + consulterDevis()       │        │ + consulterFactures()    │
-│ + accepterDevis()        │        │ + payerParCarte()        │
-│ + refuserDevis()         │        └──────────────────────────┘
+┌────────────┴────────────┐
+│                         │
+│ role = VENDEUR          │ role = CLIENT
+▼                         ▼
+┌─────────────────────────┐   ┌─────────────────────────┐
+│         VENDEUR          │   │         CLIENT           │
+│  boutiqueNom             │   │  type: LEGAL | ANONYME   │
+├─────────────────────────┤   ├─────────────────────────┤
+│ + gérerCatalogue()       │   │ + soumettreDevis()       │
+│ + créerProduit()         │   │ + consulterDevis()       │
+│ + gérerVariantes()       │   │ + consulterCommandes()   │
+│ + consulterDevis()       │   │ + consulterFactures()    │
+│ + accepterDevis()        │   │ + payerParCarte()        │
+│ + refuserDevis()         │   └─────────────────────────┘
 │ + gérerCommandes()       │
-│ + confirmerCommande()    │        ┌──────────────────────────┐
-│ + livrerCommande()       │        │     CLIENT ANONYME       │
-│ + consulterFactures()    │        │  (pas de compte USER)    │
-│ + enregistrerPaiement()  │        ├──────────────────────────┤
-│ + émettreTicketCaisse()  │        │ créé automatiquement     │
-│ + consulterTickets()     │        │ lors d'une vente caisse  │
-│ + consulterDashboard()   │        └──────────────────────────┘
-└──────────────────────────┘
+│ + confirmerCommande()    │   ┌─────────────────────────┐
+│ + livrerCommande()       │   │     CLIENT ANONYME       │
+│ + consulterFactures()    │   │  (pas de compte USER)    │
+│ + enregistrerPaiement()  │   ├─────────────────────────┤
+│ + émettreTicketCaisse()  │   │ créé automatiquement     │
+│ + consulterTickets()     │   │ lors d'une vente caisse  │
+│ + consulterDashboard()   │   └─────────────────────────┘
+└─────────────────────────┘
 Règles :
 
 Un USER est soit VENDEUR soit CLIENT — jamais les deux
@@ -512,6 +511,8 @@ Les deux peuvent payer par carte, mais :
 └─ CLIENT : carte uniquement
 └─ VENDEUR : carte + espèces + virement + chèque
 
+
+---
 
 ---
 ## 🏷️ Enums Prisma
