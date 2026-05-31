@@ -433,43 +433,153 @@ model Ticket {
 ## 🧩 Modèle Conceptuel de Données (MCD)
 
 ```
-┌──────────┐       ┌──────────┐       ┌───────────────┐
-│   USER   │──1,1──│ VENDEUR  │──1,N──│   CATEGORIE   │
-└──────────┘       └──────────┘       └───────┬───────┘
-     │                  │                     │ 1,N
-   0,1│               1,N│                    │
-     │                  │             ┌───────▼───────┐
-┌────▼─────┐       ┌────▼─────┐      │ ATTRIBUTTYPE  │
-│  CLIENT  │       │  PRODUIT │      │  estUnique    │
-└────┬─────┘       └────┬─────┘      └───────┬───────┘
-     │                  │ 1,N                │ 1,N
-   1,N│                 │            ┌───────▼───────┐
-     │           ┌──────▼──────┐     │ATTRIBUTOPTION │
-     │           │   VARIANTE  │     └───────┬───────┘
-     │           │  stock      │             │
-     │           │  prixModif  │◄────────────┘
-     │           └──────┬──────┘   (via VarianteItem)
-     │                  │ 1,N
-     │           ┌──────▼──────┐
-     │           │LIGNECOMMANDE│
-     │           └──────┬──────┘
-     │                  │ N,1
-   1,N│           ┌─────▼──────┐
-     └───────────►│  COMMANDE  │──► FACTURE ──► PAIEMENT(S)
-                  └────────────┘
-                        │
-                        └──────────► TICKET (si TICKET)
+                    ┌───────────────────────────────────────────────────────┐
+                    │                  CATEGORIE (globale)                  │
+                    │               id · nom · description                  │
+                    └────────────┬──────────────────────┬───────────────────┘
+                                 │ 1,N                  │ 1,N
+                                 │                      │
+                    ┌────────────▼──────────┐  ┌────────▼──────────────────┐
+                    │    ATTRIBUT_TYPE      │  │        PRODUIT            │
+                    │  nom · estUnique      │  │  nom · description        │
+                    └────────────┬──────────┘  │  prix_unitaire · image    │
+                                 │ 1,N         │  FK id_vendeur            │
+                    ┌────────────▼──────────┐  └────────┬──────────────────┘
+                    │   ATTRIBUT_OPTION     │           │ 1,N
+                    │       valeur          │  ┌────────▼──────────────────┐
+                    └────────────┬──────────┘  │        VARIANTE           │
+                                 │             │  stock · prix_modif       │
+                                 └──────────── ► (via VARIANTE_ITEM)       │
+                                               └────────┬──────────────────┘
+                                                        │ 1,N
+┌──────────┐  1,1   ┌──────────┐  1,N  ┌───────────────▼──────────────────┐
+│   USER   ├───────►│ VENDEUR  ├──────►│          LIGNE_DEVIS             │
+└────┬─────┘        └────┬─────┘       │  quantite · prix_unitaire_snap   │
+     │                   │ 1,N         └───────────────┬──────────────────┘
+   0,1│                  │                             │ N,1
+     │            ┌──────▼──────────────────┐  ┌──────▼──────────────────┐
+┌────▼─────┐      │         DEVIS           │  │                         │
+│  CLIENT  │      │  date · statut          │  │         DEVIS           │
+└────┬─────┘      │  FK id_client           │  │  (même entité)          │
+     │ 1,N        │  FK id_vendeur          │  └─────────────────────────┘
+     │            └──────┬──────────────────┘
+     │                   │ si ACCEPTE
+     │                   │ ▼ (auto)
+     │            ┌──────▼──────────────────┐
+     │            │       COMMANDE          │
+     │            │  statut · type          │
+     └───────────►│  FK id_client           │
+          1,N     │  FK id_vendeur          │
+                  └──────┬──────────────────┘
+                         │
+              ┌──────────┴──────────┐
+              │ type=FACTURE        │ type=TICKET
+              ▼                     ▼
+         ┌─────────┐          ┌──────────┐
+         │ FACTURE │          │  TICKET  │
+         │ HT·TVA  │          │  montant │
+         │   TTC   │          └──────────┘
+         └────┬────┘
+              │ 1,N
+         ┌────▼────┐
+         │PAIEMENT │
+         │ methode │
+         │ montant │
+         └─────────┘
 
 Règles métier :
-• USER a exactement 1 rôle : VENDEUR ou CLIENT (jamais les deux)
-• Devis EN_ATTENTE → ACCEPTE = création automatique d'une Commande
-• Commande FACTURE → Facture générée automatiquement
-• Commande TICKET → Ticket généré + client anonyme créé si besoin
-• Variante.stock décrémenté à chaque LigneCommande validée
-• Si AttributType.estUnique = true → LigneCommande.quantite forcée à 1
-• StatutPaiement calculé : NON_PAYE / PARTIEL / SOLDE selon somme des paiements
+- USER a exactement 1 rôle : VENDEUR ou CLIENT (jamais les deux)
+- Les CATEGORIES sont globales — elles ne appartiennent à aucun vendeur
+- DEVIS peut être créé par le CLIENT ou le VENDEUR
+- Toute COMMANDE naît d'un DEVIS accepté (DEVIS → ACCEPTE = Commande auto)
+- Exception unique : vente caisse (VENDEUR crée commande anonyme directe)
+- Commande type=FACTURE → Facture générée automatiquement
+- Commande type=TICKET  → Ticket généré + client anonyme créé si besoin
+- Variante.stock décrémenté à chaque LigneCommande validée
+- Si AttributType.estUnique = true → quantite forcée à 1
+- StatutPaiement calculé : NON_PAYE / PARTIEL / SOLDE selon somme paiements
 ```
+## 🗄️ Modèle Logique de Données (MLD)
 
+```
+USER(id_user, email, password_hash, role{VENDEUR|CLIENT})
+
+VENDEUR(id_vendeur, nom, prenom, telephone, #id_user)
+  id_user → USER
+
+CLIENT(id_client, nom, prenom, email, telephone, type_client, anonyme,
+       #id_user nullable)
+  id_user → USER
+
+ADRESSE(id_adresse, rue, ville, code_postal, region, pays,
+        #id_vendeur nullable, #id_client nullable)
+
+CONTACT(id_contact, nom, prenom, email, telephone, cin,
+        #id_vendeur nullable, #id_client nullable)
+
+ENTREPRISE(id_entreprise, nom, registre_commerce, numero_impot,
+           #id_vendeur nullable unique, #id_client nullable unique)
+
+CATEGORIE(id_categorie, nom, description)
+  [Aucune FK vers VENDEUR — table globale]
+
+ATTRIBUT_TYPE(id_attribut_type, nom, est_unique,
+              #id_categorie)
+  id_categorie → CATEGORIE
+
+ATTRIBUT_OPTION(id_attribut_option, valeur,
+                #id_attribut_type)
+  id_attribut_type → ATTRIBUT_TYPE
+
+PRODUIT(id_produit, nom, description, prix_unitaire, image_url,
+        #id_categorie, #id_vendeur)
+  id_categorie → CATEGORIE
+  id_vendeur   → VENDEUR
+
+VARIANTE(id_variante, stock, prix_modif nullable,
+         #id_produit)
+  id_produit → PRODUIT
+
+VARIANTE_ITEM(#id_variante, #id_attribut_option)
+  [Clé primaire composite]
+  id_variante        → VARIANTE
+  id_attribut_option → ATTRIBUT_OPTION
+
+DEVIS(id_devis, date_devis, statut{EN_ATTENTE|ACCEPTE|REFUSE|EXPIRE},
+      #id_client, #id_vendeur)
+  id_client  → CLIENT
+  id_vendeur → VENDEUR
+
+LIGNE_DEVIS(id_ligne_devis, quantite, prix_unitaire_snapshot,
+            #id_devis, #id_variante)
+  id_devis    → DEVIS
+  id_variante → VARIANTE
+
+COMMANDE(id_commande, date_commande, statut{EN_COURS|LIVREE|ANNULEE},
+         type{FACTURE|TICKET}, #id_client, #id_vendeur,
+         #id_devis nullable unique)
+  id_client  → CLIENT
+  id_vendeur → VENDEUR
+  id_devis   → DEVIS   [nullable — seulement NULL pour ventes caisse anonymes]
+
+LIGNE_COMMANDE(id_ligne_commande, quantite, prix_unitaire_snapshot,
+               #id_commande, #id_variante)
+  id_commande → COMMANDE
+  id_variante → VARIANTE
+
+FACTURE(id_facture, montant_ht, tva, montant_ttc,
+        statut_paiement{NON_PAYE|PARTIEL|SOLDE}, date_emission,
+        #id_commande unique)
+  id_commande → COMMANDE
+
+PAIEMENT(id_paiement, montant, methode{ESPECES|VIREMENT|CHEQUE|CARTE},
+         date_paiement, reference, #id_facture)
+  id_facture → FACTURE
+
+TICKET(id_ticket, montant_total, date_emission,
+       #id_commande unique)
+  id_commande → COMMANDE
+```
 ---
 ## 👥 Diagramme de classes — Rôles & responsabilités
 
@@ -482,36 +592,36 @@ Règles métier :
                            │
               ┌────────────┴────────────┐
               │                         │
-role = VENDEUR│                         │ role = CLIENT
+role=VENDEUR  │                         │  role=CLIENT
               ▼                         ▼
 ┌─────────────────────────┐   ┌─────────────────────────┐
 │         VENDEUR         │   │         CLIENT          │
-│  boutiqueNom            │   │  type: LEGAL | ANONYME  │
-├─────────────────────────┤   ├─────────────────────────┤
-│ + gérerCatalogue()      │   │ + soumettreDevis()      │
-│ + créerProduit()        │   │ + consulterDevis()      │
-│ + gérerVariantes()      │   │ + consulterCommandes()  │
-│ + consulterDevis()      │   │ + consulterFactures()   │
-│ + accepterDevis()       │   │ + payerParCarte()       │
+│  nom · prenom           │   │  type: PARTICULIER      │
+│  telephone              │   │       | PROFESSIONNEL   │
+├─────────────────────────┤   │  anonyme: boolean       │
+│ + gérerCatalogue()      │   ├─────────────────────────┤
+│ + créerProduit()        │   │ + créerDevis()          │
+│ + gérerVariantes()      │   │ + consulterDevis()      │
+│ + créerDevis()          │   │ + consulterCommandes()  │
+│ + accepterDevis()       │   │ + consulterFactures()   │
 │ + refuserDevis()        │   └─────────────────────────┘
 │ + gérerCommandes()      │
-│ + confirmerCommande()   │   ┌─────────────────────────┐
-│ + livrerCommande()      │   │     CLIENT ANONYME      │
-│ + consulterFactures()   │   │  (pas de compte USER)   │
-│ + enregistrerPaiement() │   ├─────────────────────────┤
-│ + émettreTicketCaisse() │   │ créé automatiquement    │
-│ + consulterTickets()    │   │ lors d'une vente caisse │
-│ + consulterDashboard()  │   └─────────────────────────┘
-└─────────────────────────┘
+│ + livrerCommande()      │   ┌─────────────────────────┐
+│ + consulterFactures()   │   │     CLIENT ANONYME      │
+│ + enregistrerPaiement() │   │  (pas de compte USER)   │
+│ + émettreTicketCaisse() │   ├─────────────────────────┤
+│ + consulterDashboard()  │   │ créé automatiquement    │
+└─────────────────────────┘   │ lors d'une vente caisse │
+                              └─────────────────────────┘
 
 Règles :
-- Un USER est soit VENDEUR soit CLIENT — jamais les deux
-- CLIENT ANONYME n'a pas de compte : userId = null
-- Seul le VENDEUR voit le dashboard et émet des tickets
-- Seul le CLIENT peut initier un devis
-- Les deux peuvent payer par carte, mais :
-  └─ CLIENT  : carte uniquement
-  └─ VENDEUR : carte + espèces + virement + chèque
+- USER est soit VENDEUR soit CLIENT — jamais les deux
+- CLIENT ANONYME n'a pas de compte : id_user = null
+- Les deux rôles peuvent créer un DEVIS
+- Seul le VENDEUR accepte/refuse un devis et émet des tickets
+- Seul le VENDEUR accède au dashboard
+- Toute commande naît d'un DEVIS accepté, sauf vente caisse anonyme
+- Paiements : CLIENT (carte uniquement) · VENDEUR (tous modes)
 ```
 ## 🏷️ Enums Prisma
 
